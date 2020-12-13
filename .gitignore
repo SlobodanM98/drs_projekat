@@ -112,6 +112,8 @@ pip-selfcheck.json
 .idea/dictionaries
 .idea/vcs.xml
 .idea/jsLibraryMappings.xml
+.idea/DRS.iml
+.idea/misc.xml
 
 # Sensitive or high-churn files:
 .idea/dataSources.ids
