@@ -40,4 +40,16 @@ class Window(QMainWindow):
         projectile = Projectile(self)
         self.layout().addWidget(projectile)
         projectile.move(self.player.x()+47.5, self.player.y()-30)
+        nit = Thread(target=self.kretanje_projektila, args=[projectile])
+        nit.start()
+
+    def kretanje_projektila(self, projectile):
+        while projectile.y() >= 0:
+            time.sleep(0.3)
+            if projectile.y() < 100 and projectile.y() > 0:
+                projectile.move(projectile.x(), 0)
+            else:
+                projectile.move(projectile.x(), projectile.y() - 100)
+
+        projectile.setParent(None)
 
