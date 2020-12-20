@@ -5,14 +5,10 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 import sys
 
-
-class Projectile(QLabel):
-    def __init__(self, parent=None):
+class Alien(QLabel):
+    def __init__(self, stringSlika, parent=None):
         super().__init__(parent)
-        slika = QPixmap("LaserT.png")
-        self.setPixmap(slika.scaled(3, 10))
-        self.resize(3, 10)
-
-
-
+        slika = QPixmap(stringSlika)
+        self.setPixmap(slika.scaled(30, 20))
+        self.resize(30, 20)
 
