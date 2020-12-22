@@ -12,3 +12,4 @@ class Alien(QLabel):
         self.setPixmap(slika.scaled(30, 20))
         self.resize(30, 20)
 
+
