@@ -10,8 +10,6 @@ import sys
 
 class Player(QLabel):
 
-    projektil_signal = pyqtSignal()
-
     def __init__(self, parent=None):
         super().__init__(parent)
         slika = QPixmap("rocket.png")
@@ -37,7 +35,6 @@ class Player(QLabel):
             nit.start()
 
 
-
     def keyReleaseEvent(self, event):
         if (event.key() == Qt.Key_A):
             self.a_odpusteno = True
@@ -48,16 +45,13 @@ class Player(QLabel):
 
 
     def pritisnut_space(self):
-        while self.space_odpusteno != True:
-            self.projektil_signal.emit()
-            time.sleep(0.5)
-
-        self.space_odpusteno = False
+        if (self.parent().postoji_projectil == False):
+            self.parent().projektil_kreiranje_signal.emit()
 
 
     def pritisnutoA(self):
         while self.a_odpusteno != True:
-            self.move(self.x() - 5, self.y())
+            self.parent().player_kretanje_signal.emit(1)
             time.sleep(0.05)
 
         self.a_odpusteno = False
@@ -65,7 +59,7 @@ class Player(QLabel):
 
     def pritisnutoD(self):
         while self.d_odpusteno != True:
-            self.move(self.x() + 5, self.y())
+            self.parent().player_kretanje_signal.emit(0)
             time.sleep(0.05)
 
         self.d_odpusteno = False
