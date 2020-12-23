@@ -92,6 +92,16 @@ class Window(QMainWindow):
         else:
             self.projectile.move(self.projectile.x(), self.projectile.y() - 16)
 
+        for i in reversed(self.aliens):
+            if (self.projectile.y() >= i.y() and self.projectile.y() <= i.y() + 20) and (
+                    self.projectile.x() >= i.x() and self.projectile.x() <= i.x() + 30):
+                i.setParent(None)
+                self.aliens.remove(i)
+                self.projectile.setParent(None)
+                self.postoji_projectil = False
+                self.projektil_kretanje.gasenje_signal.emit()
+                break
+
 
     def kreiranje_vanzemaljaca(self, vbox):
         slika = "alien2.png"
@@ -181,12 +191,21 @@ class kretanje_vanzemaljaca_thread(QThread):
 
 
 class kretanje_projektila_thread(QThread):
+
+    gasenje_signal = pyqtSignal()
+
     def __init__(self, parent=None, projectile=None):
         super().__init__(parent)
         self.projectile = projectile
+        self.gasenje = False
+        self.gasenje_signal.connect(self.izlaz)
+
+    @pyqtSlot()
+    def izlaz(self):
+        self.gasenje = True
 
     def run(self):
-        while self.projectile.y() > 0:
+        while self.projectile.y() > 0 and self.gasenje is False:
             time.sleep(0.05)
             if self.projectile.y() < 100 and self.projectile.y() > 0:
                 self.parent().projektil_kretanje_signal.emit(0)
