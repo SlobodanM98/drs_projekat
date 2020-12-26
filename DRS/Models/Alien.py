@@ -11,5 +11,6 @@ class Alien(QLabel):
         slika = QPixmap(stringSlika)
         self.setPixmap(slika.scaled(30, 20))
         self.resize(30, 20)
+        self.postoji = True
 
 

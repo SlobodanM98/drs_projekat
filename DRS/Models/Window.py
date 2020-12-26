@@ -69,9 +69,9 @@ class Window(QMainWindow):
     @pyqtSlot(int)
     def pomeranje_igraca(self, i):
         if i == 0:
-            self.player.move(self.player.x() + 5, self.player.y())
+            self.player.move(self.player.x() + 10, self.player.y())
         else:
-            self.player.move(self.player.x() - 5, self.player.y())
+            self.player.move(self.player.x() - 10, self.player.y())
 
     @pyqtSlot()
     def kreiranje_projektila(self):
@@ -93,14 +93,15 @@ class Window(QMainWindow):
             self.projectile.move(self.projectile.x(), self.projectile.y() - 16)
 
         for i in reversed(self.aliens):
-            if (self.projectile.y() >= i.y() and self.projectile.y() <= i.y() + 20) and (
-                    self.projectile.x() >= i.x() and self.projectile.x() <= i.x() + 30):
-                i.setParent(None)
-                self.aliens.remove(i)
-                self.projectile.setParent(None)
-                self.postoji_projectil = False
-                self.projektil_kretanje.gasenje_signal.emit()
-                break
+            if i.postoji:
+                if (self.projectile.y() >= i.y() and self.projectile.y() <= i.y() + 20) and (
+                        self.projectile.x() >= i.x() and self.projectile.x() <= i.x() + 30):
+                    i.setParent(None)
+                    self.aliens[self.aliens.index(i)].postoji = False
+                    self.projectile.setParent(None)
+                    self.postoji_projectil = False
+                    self.projektil_kretanje.gasenje_signal.emit()
+                    break
 
 
     def kreiranje_vanzemaljaca(self, vbox):
@@ -138,10 +139,38 @@ class kretanje_vanzemaljaca_thread(QThread):
         dosao_do_ivice = False
         nova_iteracija = False
         izvrseno_pomeranje_dole = False
+
+        korak = 11
+
         while True:
             if nova_iteracija == False:
                 time.sleep(1)
             br = 0
+
+            indexVanzemaljca = -1
+            pronadjenIndexVanzemaljca = False
+            brojProlaza = 0
+
+            while(pronadjenIndexVanzemaljca is False):
+                indexProvere = len(self.parent().aliens) - 1
+
+                if kretanje_desno is False:
+                    indexProvere -= 10
+                    indexProvere += brojProlaza
+                else:
+                    indexProvere -= brojProlaza
+
+                for i in range(5):
+                    if (self.parent().aliens[indexProvere].postoji):
+                        indexVanzemaljca = indexProvere
+                        pronadjenIndexVanzemaljca = True
+                        break
+                    else:
+                        indexProvere -= korak
+                        print(indexProvere)
+
+                brojProlaza += 1
+
             if nova_iteracija and dosao_do_ivice:
                 for i in reversed(self.parent().aliens):
                     self.parent().pomeri_dole_signal.emit(self.parent().aliens.index(i))
@@ -149,35 +178,25 @@ class kretanje_vanzemaljaca_thread(QThread):
                     if br % 11 == 0:
                         time.sleep(0.05)
             elif kretanje_desno:
-                for i in reversed(self.parent().aliens):
-                    if br == 0:
-                        if i.x() + 80 <= 700:
-                            self.parent().pomeri_desno_signal.emit(self.parent().aliens.index(i))
-                            br += 1
-                        else:
-                            kretanje_desno = False
-                            dosao_do_ivice = True
-                            break
-                    else:
+                if self.parent().aliens[indexVanzemaljca].x() + 50 <= 650:
+                    for i in reversed(self.parent().aliens):
                         self.parent().pomeri_desno_signal.emit(self.parent().aliens.index(i))
                         br += 1
-                    if br % 11 == 0:
-                        time.sleep(0.05)
+                        if br % 11 == 0:
+                            time.sleep(0.05)
+                else:
+                    kretanje_desno = False
+                    dosao_do_ivice = True
             else:
-                for i in reversed(self.parent().aliens):
-                    if br == 0:
-                        if i.x() - 550 >= 0:
-                            self.parent().pomeri_levo_signal.emit(self.parent().aliens.index(i))
-                            br += 1
-                        else:
-                            kretanje_desno = True
-                            dosao_do_ivice = True
-                            break
-                    else:
+                if self.parent().aliens[indexVanzemaljca].x() - 50 >= 0:
+                    for i in reversed(self.parent().aliens):
                         self.parent().pomeri_levo_signal.emit(self.parent().aliens.index(i))
                         br += 1
-                    if br % 11 == 0:
-                        time.sleep(0.05)
+                        if br % 11 == 0:
+                            time.sleep(0.05)
+                else:
+                    kretanje_desno = True
+                    dosao_do_ivice = True
 
             if dosao_do_ivice and nova_iteracija:
                 izvrseno_pomeranje_dole = True
