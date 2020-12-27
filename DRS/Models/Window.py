@@ -5,6 +5,7 @@ from PyQt5.QtCore import Qt, pyqtSlot, QThread, pyqtSignal
 from Models.Player import Player
 from Models.Projectile import Projectile
 from Models.Alien import Alien
+import random
 
 
 class Window(QMainWindow):
@@ -17,12 +18,18 @@ class Window(QMainWindow):
     projektil_kreiranje_signal = pyqtSignal()
     projektil_kretanje_signal = pyqtSignal(int)
 
+    projektil_vanzemaljaca_kreiranje_signal = pyqtSignal()
+    projektil_vanzemaljaca_kretanje_signal = pyqtSignal(int)
+
     def __init__(self):
         super().__init__()
         self.player = Player(self)
         self.aliens = []
+        self.aliensZaPucanje = []
         self.projectile = None
         self.postoji_projectil = False
+        self.projectile_vanzemaljaca = None
+        self.postoji_projectil_vanzemaljaca = False
 
         self.set_ui()
 
@@ -39,6 +46,9 @@ class Window(QMainWindow):
         self.projektil_kretanje_signal.connect(self.kretanje_projektila)
 
         self.kretanje_vanzemaljca = kretanje_vanzemaljaca_thread(self)
+
+        self.projektil_vanzemaljaca_kreiranje_signal.connect(self.kreiranje_projektila_vanzemaljaca)
+        self.projektil_vanzemaljaca_kretanje_signal.connect(self.kretanje_projektila_vanzemaljaca)
 
         self.setFixedSize(700, 800)
         vbox.addWidget(self.player)
@@ -79,7 +89,7 @@ class Window(QMainWindow):
         self.projectile = projectile
         self.postoji_projectil = True
         self.layout().addWidget(self.projectile)
-        projectile.move(self.player.x() + 38.5, self.player.y() - 5)
+        projectile.move(self.player.x() + 21, self.player.y() - 5)
         self.projektil_kretanje = kretanje_projektila_thread(self, self.projectile)
         self.projektil_kretanje.start()
 
@@ -90,7 +100,7 @@ class Window(QMainWindow):
             self.projectile.setParent(None)
             self.postoji_projectil = False
         else:
-            self.projectile.move(self.projectile.x(), self.projectile.y() - 16)
+            self.projectile.move(self.projectile.x(), self.projectile.y() - 10)
 
         for i in reversed(self.aliens):
             if i.postoji:
@@ -98,36 +108,78 @@ class Window(QMainWindow):
                         self.projectile.x() >= i.x() and self.projectile.x() <= i.x() + 30):
                     i.setParent(None)
                     self.aliens[self.aliens.index(i)].postoji = False
+                    self.aliensZaPucanje.remove(i)
                     self.projectile.setParent(None)
                     self.postoji_projectil = False
                     self.projektil_kretanje.gasenje_signal.emit()
                     break
+                if(self.postoji_projectil_vanzemaljaca != False):
+                    if(self.projectile.y() >= self.projectile_vanzemaljaca.y() and self.projectile.y() <= self.projectile_vanzemaljaca.y() + 10) and \
+                            (self.projectile.x() >= self.projectile_vanzemaljaca.x() and self.projectile.x() <= self.projectile_vanzemaljaca.x() + 10):
+                        self.projectile.setParent(None)
+                        self.postoji_projectil = False
+                        self.projektil_kretanje.gasenje_signal.emit()
+                        self.projectile_vanzemaljaca.setParent(None)
+                        self.postoji_projectil_vanzemaljaca = False
+                        self.projektil_vanzemaljaca_kretanje.gasenje_signal.emit()
+
+
+    @pyqtSlot()
+    def kreiranje_projektila_vanzemaljaca(self):
+        projectile = Projectile(self, 10, 10, "pow.png")
+        self.projectile_vanzemaljaca = projectile
+        self.postoji_projectil_vanzemaljaca = True
+        alien = random.choice(self.aliensZaPucanje)
+        for i in range(self.aliensZaPucanje.index(alien), len(self.aliensZaPucanje)):
+            if(alien.red == 5):
+                break
+            if(alien.kolona == self.aliensZaPucanje[i].kolona and alien.red < self.aliensZaPucanje[i].red):
+                alien = self.aliensZaPucanje[i]
+        self.layout().addWidget(self.projectile_vanzemaljaca)
+        projectile.move(alien.x() + 10, alien.y() + 25)
+        self.projektil_vanzemaljaca_kretanje = kretanje_projektila_vanzemaljaca_thread(self, self.projectile_vanzemaljaca)
+        self.projektil_vanzemaljaca_kretanje.start()
+
+    @pyqtSlot(int)
+    def kretanje_projektila_vanzemaljaca(self, i):
+        if i == 0:
+            self.projectile_vanzemaljaca.move(self.projectile_vanzemaljaca.x(), 800)
+            self.projectile_vanzemaljaca.setParent(None)
+            self.postoji_projectil_vanzemaljaca = False
+        else:
+            self.projectile_vanzemaljaca.move(self.projectile_vanzemaljaca.x(), self.projectile_vanzemaljaca.y() + 10)
 
 
     def kreiranje_vanzemaljaca(self, vbox):
         slika = "alien2.png"
-        line = 1
+        red = 1
+        kolona = 1
         for i in range(55):
             if i == 0:
-                alien = Alien(slika, self)
+                alien = Alien(slika, red, kolona, self)
                 vbox.addWidget(alien)
                 alien.move(70, 200)
                 self.aliens.append(alien)
+                self.aliensZaPucanje.append(alien)
             elif i != 0 and i % 11 == 0:
-                line += 1
-                if line == 2 or line == 3:
+                red += 1
+                kolona = 1;
+                if red == 2 or red == 3:
                     slika = "alien.png"
                 else:
                     slika = "alien3.png"
-                alien = Alien(slika, self)
+                alien = Alien(slika, red, kolona, self)
                 vbox.addWidget(alien)
                 alien.move(self.aliens[i-11].x(), self.aliens[i-11].y() + 40)
                 self.aliens.append(alien)
+                self.aliensZaPucanje.append(alien)
             else:
-                alien = Alien(slika, self)
+                kolona += 1
+                alien = Alien(slika, red, kolona, self)
                 vbox.addWidget(alien)
                 alien.move(self.aliens[i-1].x() + 50, self.aliens[i-1].y())
                 self.aliens.append(alien)
+                self.aliensZaPucanje.append(alien)
 
 
 class kretanje_vanzemaljaca_thread(QThread):
@@ -208,6 +260,10 @@ class kretanje_vanzemaljaca_thread(QThread):
                 dosao_do_ivice = False
                 izvrseno_pomeranje_dole = False
 
+            if(self.parent().postoji_projectil_vanzemaljaca == False):
+                self.parent().projektil_vanzemaljaca_kreiranje_signal.emit()
+
+
 
 class kretanje_projektila_thread(QThread):
 
@@ -225,9 +281,33 @@ class kretanje_projektila_thread(QThread):
 
     def run(self):
         while self.projectile.y() > 0 and self.gasenje is False:
-            time.sleep(0.05)
+            time.sleep(0.03)
             if self.projectile.y() < 100 and self.projectile.y() > 0:
                 self.parent().projektil_kretanje_signal.emit(0)
                 break
             else:
                 self.parent().projektil_kretanje_signal.emit(1)
+
+
+class kretanje_projektila_vanzemaljaca_thread(QThread):
+
+    gasenje_signal = pyqtSignal()
+
+    def __init__(self, parent=None, projectile=None):
+        super().__init__(parent)
+        self.projectile = projectile
+        self.gasenje = False
+        self.gasenje_signal.connect(self.izlaz)
+
+    @pyqtSlot()
+    def izlaz(self):
+        self.gasenje = True
+
+    def run(self):
+        while self.projectile.y() > 0 and self.gasenje is False:
+            time.sleep(0.05)
+            if self.projectile.y() > 750 and self.projectile.y() < 800:
+                self.parent().projektil_vanzemaljaca_kretanje_signal.emit(0)
+                break
+            else:
+                self.parent().projektil_vanzemaljaca_kretanje_signal.emit(1)

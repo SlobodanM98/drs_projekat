@@ -7,11 +7,11 @@ import sys
 
 
 class Projectile(QLabel):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, sirina = 3, duzina = 10, slikaa = "LaserT.png"):
         super().__init__(parent)
-        slika = QPixmap("LaserT.png")
-        self.setPixmap(slika.scaled(3, 10))
-        self.resize(3, 10)
+        slika = QPixmap(slikaa)
+        self.setPixmap(slika.scaled(sirina, duzina))
+        self.resize(sirina, duzina)
 
 
 
