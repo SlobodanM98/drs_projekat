@@ -1,6 +1,6 @@
 import time
 
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtWidgets import QMainWindow, QTextEdit, QAction, QFileDialog, QApplication, QDesktopWidget, QLabel, QWidget, \
     QHBoxLayout, QVBoxLayout
 from PyQt5.QtCore import Qt, pyqtSlot, QThread, pyqtSignal
@@ -8,6 +8,7 @@ from Models.Player import Player
 from Models.Projectile import Projectile
 from Models.Alien import Alien
 from Models.Health import Zivot
+from Models.Stit import Stit
 import random
 
 
@@ -31,6 +32,7 @@ class Window(QMainWindow):
         self.aliensZaPucanje = []
         self.lista_zivota = []
         self.lista_preostalih_zivota = []
+        self.stitovi = []
         self.projectile = None
         self.postoji_projectil = False
         self.projectile_vanzemaljaca = None
@@ -71,6 +73,8 @@ class Window(QMainWindow):
         self.kreiranje_vanzemaljaca(vbox)
         self.kreiranje_zivota(vbox)
 
+        self.kreiranje_stita()
+
         self.kretanje_vanzemaljca.start()
 
         self.setLayout(vbox)
@@ -106,6 +110,20 @@ class Window(QMainWindow):
         projectile.move(self.player.x() + 21, self.player.y() - 5)
         self.projektil_kretanje = kretanje_projektila_thread(self, self.projectile)
         self.projektil_kretanje.start()
+
+    def kreiranje_stita(self):
+        stit = Stit(self)
+        self.layout().addWidget(stit)
+        stit.move(100, 470)
+        self.stitovi.append(stit)
+        stit = Stit(self)
+        self.layout().addWidget(stit)
+        stit.move(300, 470)
+        self.stitovi.append(stit)
+        stit = Stit(self)
+        self.layout().addWidget(stit)
+        stit.move(500, 470)
+        self.stitovi.append(stit)
 
     @pyqtSlot(int)
     def kretanje_projektila(self, i):
@@ -178,9 +196,33 @@ class Window(QMainWindow):
                         self.postoji_projectil_vanzemaljaca = False
                         self.projektil_vanzemaljaca_kretanje.gasenje_signal.emit()
                         break
-
-
-
+        if (self.postoji_projectil_vanzemaljaca):
+            for i in reversed(self.stitovi):
+                if (self.projectile_vanzemaljaca.y() >= i.y() and self.projectile_vanzemaljaca.y() <= i.y() + 60) and (
+                        self.projectile_vanzemaljaca.x() >= i.x() and self.projectile_vanzemaljaca.x() <= i.x() + 80):
+                    if (i.nivo_ostecenja == 0):
+                        slika_stita = QPixmap("Ostecenje_1.png")
+                        i.setPixmap(slika_stita.scaled(80, 60))
+                        i.nivo_ostecenja += 1
+                    elif (i.nivo_ostecenja == 1):
+                        slika_stita = QPixmap("Ostecenje_2.png")
+                        i.setPixmap(slika_stita.scaled(80, 60))
+                        i.nivo_ostecenja += 1
+                    elif (i.nivo_ostecenja == 2):
+                        slika_stita = QPixmap("Ostecenje_3.png")
+                        i.setPixmap(slika_stita.scaled(80, 60))
+                        i.nivo_ostecenja += 1
+                    elif (i.nivo_ostecenja == 3):
+                        slika_stita = QPixmap("Ostecenje_4.png")
+                        i.setPixmap(slika_stita.scaled(80, 60))
+                        i.nivo_ostecenja += 1
+                    else:
+                        i.setParent(None)
+                        self.stitovi.remove(i)
+                    self.projektil_vanzemaljaca_kretanje.gasenje_signal.emit()
+                    self.projectile_vanzemaljaca.setParent(None)
+                    self.postoji_projectil_vanzemaljaca = False
+                    break
 
     def kreiranje_vanzemaljaca(self, vbox):
         slika = "alien2.png"
