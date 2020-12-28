@@ -1,10 +1,13 @@
 import time
+
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QMainWindow, QTextEdit, QAction, QFileDialog, QApplication, QDesktopWidget, QLabel, QWidget, \
     QHBoxLayout, QVBoxLayout
 from PyQt5.QtCore import Qt, pyqtSlot, QThread, pyqtSignal
 from Models.Player import Player
 from Models.Projectile import Projectile
 from Models.Alien import Alien
+from Models.Health import Zivot
 import random
 
 
@@ -26,16 +29,26 @@ class Window(QMainWindow):
         self.player = Player(self)
         self.aliens = []
         self.aliensZaPucanje = []
+        self.lista_zivota = []
+        self.lista_preostalih_zivota = []
         self.projectile = None
         self.postoji_projectil = False
         self.projectile_vanzemaljaca = None
         self.postoji_projectil_vanzemaljaca = False
+        self.skor = 0
+        self.pogodio_playera = False
 
         self.set_ui()
 
     def set_ui(self):
         self.setStyleSheet("background-color: black;")
         vbox = QVBoxLayout(self)
+
+        self.labela_skor = QLabel(self)
+        self.labela_skor.setFont(QFont('Arial', 13))
+        self.labela_skor.setText("SCORE: " + self.skor.__str__())
+        self.labela_skor.setStyleSheet("color: white; font-weight: bold")
+        self.labela_skor.move(self.x()+20, self.y() + 20)
 
         self.pomeri_dole_signal.connect(self.pomeranje_dole)
         self.pomeri_desno_signal.connect(self.pomeranje_desno)
@@ -56,6 +69,7 @@ class Window(QMainWindow):
         self.player.setFocus()
 
         self.kreiranje_vanzemaljaca(vbox)
+        self.kreiranje_zivota(vbox)
 
         self.kretanje_vanzemaljca.start()
 
@@ -111,6 +125,8 @@ class Window(QMainWindow):
                     self.aliensZaPucanje.remove(i)
                     self.projectile.setParent(None)
                     self.postoji_projectil = False
+                    self.skor += 1
+                    self.labela_skor.setText("SCORE: " + self.skor.__str__())
                     self.projektil_kretanje.gasenje_signal.emit()
                     break
                 if(self.postoji_projectil_vanzemaljaca != False):
@@ -142,12 +158,28 @@ class Window(QMainWindow):
 
     @pyqtSlot(int)
     def kretanje_projektila_vanzemaljaca(self, i):
+
         if i == 0:
             self.projectile_vanzemaljaca.move(self.projectile_vanzemaljaca.x(), 800)
             self.projectile_vanzemaljaca.setParent(None)
             self.postoji_projectil_vanzemaljaca = False
         else:
             self.projectile_vanzemaljaca.move(self.projectile_vanzemaljaca.x(), self.projectile_vanzemaljaca.y() + 10)
+
+        if (self.projectile_vanzemaljaca.x() >= self.player.x() and self.projectile_vanzemaljaca.x() <= self.player.x() + 45) and \
+                (self.projectile_vanzemaljaca.y() >= self.player.y() and self.projectile_vanzemaljaca.y() <= self.player.y() + 70):
+            if self.postoji_projectil_vanzemaljaca:
+                for i in self.lista_zivota:
+                    if i.postoji:
+                        i.setParent(None)
+                        self.lista_zivota[self.lista_zivota.index(i)].postoji = False
+                        self.lista_preostalih_zivota.remove(i)
+                        self.projectile_vanzemaljaca.setParent(None)
+                        self.postoji_projectil_vanzemaljaca = False
+                        self.projektil_vanzemaljaca_kretanje.gasenje_signal.emit()
+                        break
+
+
 
 
     def kreiranje_vanzemaljaca(self, vbox):
@@ -180,6 +212,28 @@ class Window(QMainWindow):
                 alien.move(self.aliens[i-1].x() + 50, self.aliens[i-1].y())
                 self.aliens.append(alien)
                 self.aliensZaPucanje.append(alien)
+
+
+
+    def kreiranje_zivota(self, vbox):
+        zivot = Zivot(self)
+        vbox.addWidget(zivot)
+        zivot.move(580, 20)
+        self.lista_zivota.append(zivot)
+        self.lista_preostalih_zivota.append(zivot)
+
+        zivot = Zivot(self)
+        vbox.addWidget(zivot)
+        zivot.move(620, 20)
+        self.lista_zivota.append(zivot)
+        self.lista_preostalih_zivota.append(zivot)
+
+        zivot = Zivot(self)
+        vbox.addWidget(zivot)
+        zivot.move(660, 20)
+        self.lista_zivota.append(zivot)
+        self.lista_preostalih_zivota.append(zivot)
+
 
 
 class kretanje_vanzemaljaca_thread(QThread):
