@@ -13,8 +13,8 @@ class Player(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
         slika = QPixmap("rocket.png")
-        self.setPixmap(slika.scaled(45, 70))
-        self.resize(80, 70)
+        self.setPixmap(slika.scaled(45 * self.parent().razmera_sirina, 70 * self.parent().razmera_visina))
+        self.resize(80 * self.parent().razmera_sirina, 70 * self.parent().razmera_visina)
         self.keylist = []
         self.keys = []
         self.dozvola = True

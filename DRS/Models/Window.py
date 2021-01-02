@@ -27,6 +27,11 @@ class Window(QMainWindow):
 
     def __init__(self):
         super().__init__()
+
+        ekran = QDesktopWidget().screenGeometry()
+        self.razmera_sirina = ekran.width() / 1920
+        self.razmera_visina = ekran.height() / 1080
+
         self.player = Player(self)
         self.aliens = []
         self.aliensZaPucanje = []
@@ -47,10 +52,10 @@ class Window(QMainWindow):
         vbox = QVBoxLayout(self)
 
         self.labela_skor = QLabel(self)
-        self.labela_skor.setFont(QFont('Arial', 13))
+        self.labela_skor.setFont(QFont('Arial', 13 * self.razmera_sirina))
         self.labela_skor.setText("SCORE: " + self.skor.__str__())
         self.labela_skor.setStyleSheet("color: white; font-weight: bold")
-        self.labela_skor.move(self.x()+20, self.y() + 20)
+        self.labela_skor.move(self.x() + 20 * self.razmera_sirina, self.y() + 20 * self.razmera_visina)
 
         self.pomeri_dole_signal.connect(self.pomeranje_dole)
         self.pomeri_desno_signal.connect(self.pomeranje_desno)
@@ -65,9 +70,9 @@ class Window(QMainWindow):
         self.projektil_vanzemaljaca_kreiranje_signal.connect(self.kreiranje_projektila_vanzemaljaca)
         self.projektil_vanzemaljaca_kretanje_signal.connect(self.kretanje_projektila_vanzemaljaca)
 
-        self.setFixedSize(700, 800)
+        self.setFixedSize(700 * self.razmera_sirina, 800 * self.razmera_visina)
         vbox.addWidget(self.player)
-        self.player.move(300, 700)
+        self.player.move(300 * self.razmera_sirina, 700 * self.razmera_visina)
         self.player.setFocus()
 
         self.kreiranje_vanzemaljaca(vbox)
@@ -78,28 +83,28 @@ class Window(QMainWindow):
         self.kretanje_vanzemaljca.start()
 
         self.setLayout(vbox)
-        self.setGeometry(600, 100, 500, 500)
+        self.setGeometry(600 * self.razmera_sirina, 100 * self.razmera_sirina, 500 * self.razmera_sirina, 500 * self.razmera_sirina)
         self.setWindowTitle("Space invader")
         self.show()
 
     @pyqtSlot(int)
     def pomeranje_dole(self, i):
-        self.aliens[i].move(self.aliens[i].x(), self.aliens[i].y() + 20)
+        self.aliens[i].move(self.aliens[i].x(), self.aliens[i].y() + 20 * self.razmera_visina)
 
     @pyqtSlot(int)
     def pomeranje_desno(self, i):
-        self.aliens[i].move(self.aliens[i].x() + 10, self.aliens[i].y())
+        self.aliens[i].move(self.aliens[i].x() + 10 * self.razmera_sirina, self.aliens[i].y())
 
     @pyqtSlot(int)
     def pomeranje_levo(self, i):
-        self.aliens[i].move(self.aliens[i].x() - 10, self.aliens[i].y())
+        self.aliens[i].move(self.aliens[i].x() - 10 * self.razmera_sirina, self.aliens[i].y())
 
     @pyqtSlot(int)
     def pomeranje_igraca(self, i):
         if i == 0:
-            self.player.move(self.player.x() + 10, self.player.y())
+            self.player.move(self.player.x() + 10 * self.razmera_sirina, self.player.y())
         else:
-            self.player.move(self.player.x() - 10, self.player.y())
+            self.player.move(self.player.x() - 10 * self.razmera_sirina, self.player.y())
 
     @pyqtSlot()
     def kreiranje_projektila(self):
@@ -107,22 +112,22 @@ class Window(QMainWindow):
         self.projectile = projectile
         self.postoji_projectil = True
         self.layout().addWidget(self.projectile)
-        projectile.move(self.player.x() + 21, self.player.y() - 5)
+        projectile.move(self.player.x() + 21 * self.razmera_sirina, self.player.y() - 5 * self.razmera_visina)
         self.projektil_kretanje = kretanje_projektila_thread(self, self.projectile)
         self.projektil_kretanje.start()
 
     def kreiranje_stita(self):
         stit = Stit(self)
         self.layout().addWidget(stit)
-        stit.move(100, 470)
+        stit.move(100 * self.razmera_sirina, 470 * self.razmera_visina)
         self.stitovi.append(stit)
         stit = Stit(self)
         self.layout().addWidget(stit)
-        stit.move(300, 470)
+        stit.move(300 * self.razmera_sirina, 470 * self.razmera_visina)
         self.stitovi.append(stit)
         stit = Stit(self)
         self.layout().addWidget(stit)
-        stit.move(500, 470)
+        stit.move(500 * self.razmera_sirina, 470 * self.razmera_visina)
         self.stitovi.append(stit)
 
     @pyqtSlot(int)
@@ -132,12 +137,12 @@ class Window(QMainWindow):
             self.projectile.setParent(None)
             self.postoji_projectil = False
         else:
-            self.projectile.move(self.projectile.x(), self.projectile.y() - 10)
+            self.projectile.move(self.projectile.x(), self.projectile.y() - 10 * self.razmera_visina)
 
         for i in reversed(self.aliens):
             if i.postoji:
-                if (self.projectile.y() >= i.y() and self.projectile.y() <= i.y() + 20) and (
-                        self.projectile.x() >= i.x() and self.projectile.x() <= i.x() + 30):
+                if (self.projectile.y() >= i.y() and self.projectile.y() <= i.y() + 20 * self.razmera_visina) and (
+                        self.projectile.x() >= i.x() and self.projectile.x() <= i.x() + 30 * self.razmera_visina):
                     i.setParent(None)
                     self.aliens[self.aliens.index(i)].postoji = False
                     self.aliensZaPucanje.remove(i)
@@ -148,8 +153,8 @@ class Window(QMainWindow):
                     self.projektil_kretanje.gasenje_signal.emit()
                     break
                 if(self.postoji_projectil_vanzemaljaca != False):
-                    if(self.projectile.y() >= self.projectile_vanzemaljaca.y() and self.projectile.y() <= self.projectile_vanzemaljaca.y() + 10) and \
-                            (self.projectile.x() >= self.projectile_vanzemaljaca.x() and self.projectile.x() <= self.projectile_vanzemaljaca.x() + 10):
+                    if(self.projectile.y() >= self.projectile_vanzemaljaca.y() and self.projectile.y() <= self.projectile_vanzemaljaca.y() + 10 * self.razmera_visina) and \
+                            (self.projectile.x() >= self.projectile_vanzemaljaca.x() and self.projectile.x() <= self.projectile_vanzemaljaca.x() + 10 * self.razmera_visina):
                         self.projectile.setParent(None)
                         self.postoji_projectil = False
                         self.projektil_kretanje.gasenje_signal.emit()
@@ -170,7 +175,7 @@ class Window(QMainWindow):
             if(alien.kolona == self.aliensZaPucanje[i].kolona and alien.red < self.aliensZaPucanje[i].red):
                 alien = self.aliensZaPucanje[i]
         self.layout().addWidget(self.projectile_vanzemaljaca)
-        projectile.move(alien.x() + 10, alien.y() + 25)
+        projectile.move(alien.x() + 10 * self.razmera_sirina, alien.y() + 25 * self.razmera_visina)
         self.projektil_vanzemaljaca_kretanje = kretanje_projektila_vanzemaljaca_thread(self, self.projectile_vanzemaljaca)
         self.projektil_vanzemaljaca_kretanje.start()
 
@@ -178,14 +183,14 @@ class Window(QMainWindow):
     def kretanje_projektila_vanzemaljaca(self, i):
 
         if i == 0:
-            self.projectile_vanzemaljaca.move(self.projectile_vanzemaljaca.x(), 800)
+            self.projectile_vanzemaljaca.move(self.projectile_vanzemaljaca.x(), 800 * self.razmera_visina)
             self.projectile_vanzemaljaca.setParent(None)
             self.postoji_projectil_vanzemaljaca = False
         else:
-            self.projectile_vanzemaljaca.move(self.projectile_vanzemaljaca.x(), self.projectile_vanzemaljaca.y() + 10)
+            self.projectile_vanzemaljaca.move(self.projectile_vanzemaljaca.x(), self.projectile_vanzemaljaca.y() + 10 * self.razmera_visina)
 
-        if (self.projectile_vanzemaljaca.x() >= self.player.x() and self.projectile_vanzemaljaca.x() <= self.player.x() + 45) and \
-                (self.projectile_vanzemaljaca.y() >= self.player.y() and self.projectile_vanzemaljaca.y() <= self.player.y() + 70):
+        if (self.projectile_vanzemaljaca.x() >= self.player.x() and self.projectile_vanzemaljaca.x() <= self.player.x() + 45 * self.razmera_visina) and \
+                (self.projectile_vanzemaljaca.y() >= self.player.y() and self.projectile_vanzemaljaca.y() <= self.player.y() + 70 * self.razmera_visina):
             if self.postoji_projectil_vanzemaljaca:
                 for i in self.lista_zivota:
                     if i.postoji:
@@ -198,23 +203,23 @@ class Window(QMainWindow):
                         break
         if (self.postoji_projectil_vanzemaljaca):
             for i in reversed(self.stitovi):
-                if (self.projectile_vanzemaljaca.y() >= i.y() and self.projectile_vanzemaljaca.y() <= i.y() + 60) and (
-                        self.projectile_vanzemaljaca.x() >= i.x() and self.projectile_vanzemaljaca.x() <= i.x() + 80):
+                if (self.projectile_vanzemaljaca.y() >= i.y() and self.projectile_vanzemaljaca.y() <= i.y() + 60 * self.razmera_visina) and (
+                        self.projectile_vanzemaljaca.x() >= i.x() and self.projectile_vanzemaljaca.x() <= i.x() + 80 * self.razmera_visina):
                     if (i.nivo_ostecenja == 0):
                         slika_stita = QPixmap("Ostecenje_1.png")
-                        i.setPixmap(slika_stita.scaled(80, 60))
+                        i.setPixmap(slika_stita.scaled(80 * self.razmera_sirina, 60 * self.razmera_visina))
                         i.nivo_ostecenja += 1
                     elif (i.nivo_ostecenja == 1):
                         slika_stita = QPixmap("Ostecenje_2.png")
-                        i.setPixmap(slika_stita.scaled(80, 60))
+                        i.setPixmap(slika_stita.scaled(80 * self.razmera_sirina, 60 * self.razmera_visina))
                         i.nivo_ostecenja += 1
                     elif (i.nivo_ostecenja == 2):
                         slika_stita = QPixmap("Ostecenje_3.png")
-                        i.setPixmap(slika_stita.scaled(80, 60))
+                        i.setPixmap(slika_stita.scaled(80 * self.razmera_sirina, 60 * self.razmera_visina))
                         i.nivo_ostecenja += 1
                     elif (i.nivo_ostecenja == 3):
                         slika_stita = QPixmap("Ostecenje_4.png")
-                        i.setPixmap(slika_stita.scaled(80, 60))
+                        i.setPixmap(slika_stita.scaled(80 * self.razmera_sirina, 60 * self.razmera_visina))
                         i.nivo_ostecenja += 1
                     else:
                         i.setParent(None)
@@ -232,7 +237,7 @@ class Window(QMainWindow):
             if i == 0:
                 alien = Alien(slika, red, kolona, self)
                 vbox.addWidget(alien)
-                alien.move(70, 200)
+                alien.move(70 * self.razmera_sirina, 200 * self.razmera_visina)
                 self.aliens.append(alien)
                 self.aliensZaPucanje.append(alien)
             elif i != 0 and i % 11 == 0:
@@ -244,14 +249,14 @@ class Window(QMainWindow):
                     slika = "alien3.png"
                 alien = Alien(slika, red, kolona, self)
                 vbox.addWidget(alien)
-                alien.move(self.aliens[i-11].x(), self.aliens[i-11].y() + 40)
+                alien.move(self.aliens[i-11].x(), self.aliens[i-11].y() + 40 * self.razmera_visina)
                 self.aliens.append(alien)
                 self.aliensZaPucanje.append(alien)
             else:
                 kolona += 1
                 alien = Alien(slika, red, kolona, self)
                 vbox.addWidget(alien)
-                alien.move(self.aliens[i-1].x() + 50, self.aliens[i-1].y())
+                alien.move(self.aliens[i-1].x() + 50 * self.razmera_sirina, self.aliens[i-1].y())
                 self.aliens.append(alien)
                 self.aliensZaPucanje.append(alien)
 
@@ -260,19 +265,19 @@ class Window(QMainWindow):
     def kreiranje_zivota(self, vbox):
         zivot = Zivot(self)
         vbox.addWidget(zivot)
-        zivot.move(580, 20)
+        zivot.move(580 * self.razmera_sirina, 20 * self.razmera_visina)
         self.lista_zivota.append(zivot)
         self.lista_preostalih_zivota.append(zivot)
 
         zivot = Zivot(self)
         vbox.addWidget(zivot)
-        zivot.move(620, 20)
+        zivot.move(620 * self.razmera_sirina, 20 * self.razmera_visina)
         self.lista_zivota.append(zivot)
         self.lista_preostalih_zivota.append(zivot)
 
         zivot = Zivot(self)
         vbox.addWidget(zivot)
-        zivot.move(660, 20)
+        zivot.move(660 * self.razmera_sirina, 20 * self.razmera_visina)
         self.lista_zivota.append(zivot)
         self.lista_preostalih_zivota.append(zivot)
 
@@ -326,7 +331,7 @@ class kretanje_vanzemaljaca_thread(QThread):
                     if br % 11 == 0:
                         time.sleep(0.05)
             elif kretanje_desno:
-                if self.parent().aliens[indexVanzemaljca].x() + 50 <= 650:
+                if self.parent().aliens[indexVanzemaljca].x() + 50 * self.parent().razmera_sirina <= 650 * self.parent().razmera_sirina:
                     for i in reversed(self.parent().aliens):
                         self.parent().pomeri_desno_signal.emit(self.parent().aliens.index(i))
                         br += 1
@@ -336,7 +341,7 @@ class kretanje_vanzemaljaca_thread(QThread):
                     kretanje_desno = False
                     dosao_do_ivice = True
             else:
-                if self.parent().aliens[indexVanzemaljca].x() - 50 >= 0:
+                if self.parent().aliens[indexVanzemaljca].x() - 50 * self.parent().razmera_sirina >= 0:
                     for i in reversed(self.parent().aliens):
                         self.parent().pomeri_levo_signal.emit(self.parent().aliens.index(i))
                         br += 1
@@ -378,7 +383,7 @@ class kretanje_projektila_thread(QThread):
     def run(self):
         while self.projectile.y() > 0 and self.gasenje is False:
             time.sleep(0.03)
-            if self.projectile.y() < 100 and self.projectile.y() > 0:
+            if self.projectile.y() < 100 * self.parent().razmera_visina and self.projectile.y() > 0:
                 self.parent().projektil_kretanje_signal.emit(0)
                 break
             else:
@@ -402,7 +407,7 @@ class kretanje_projektila_vanzemaljaca_thread(QThread):
     def run(self):
         while self.projectile.y() > 0 and self.gasenje is False:
             time.sleep(0.05)
-            if self.projectile.y() > 750 and self.projectile.y() < 800:
+            if self.projectile.y() > 750 * self.parent().razmera_visina and self.projectile.y() < 800 * self.parent().razmera_visina:
                 self.parent().projektil_vanzemaljaca_kretanje_signal.emit(0)
                 break
             else:

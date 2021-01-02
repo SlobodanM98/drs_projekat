@@ -9,6 +9,6 @@ class Zivot(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
         slika = QPixmap('zivot.png')
-        self.setPixmap(slika.scaled(30, 30))
-        self.resize(30, 30)
+        self.setPixmap(slika.scaled(30 * self.parent().razmera_sirina, 30 * self.parent().razmera_visina))
+        self.resize(30 * self.parent().razmera_sirina, 30 * self.parent().razmera_visina)
         self.postoji = True
