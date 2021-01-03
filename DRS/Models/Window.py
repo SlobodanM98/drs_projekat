@@ -25,6 +25,9 @@ class Window(QMainWindow):
     projektil_vanzemaljaca_kreiranje_signal = pyqtSignal()
     projektil_vanzemaljaca_kretanje_signal = pyqtSignal(int)
 
+    nova_igra_signal = pyqtSignal()
+    game_over_signal = pyqtSignal()
+
     def __init__(self):
         super().__init__()
 
@@ -36,7 +39,6 @@ class Window(QMainWindow):
         self.aliens = []
         self.aliensZaPucanje = []
         self.lista_zivota = []
-        self.lista_preostalih_zivota = []
         self.stitovi = []
         self.projectile = None
         self.postoji_projectil = False
@@ -55,7 +57,21 @@ class Window(QMainWindow):
         self.labela_skor.setFont(QFont('Arial', 13 * self.razmera_sirina))
         self.labela_skor.setText("SCORE: " + self.skor.__str__())
         self.labela_skor.setStyleSheet("color: white; font-weight: bold")
-        self.labela_skor.move(self.x() + 20 * self.razmera_sirina, self.y() + 20 * self.razmera_visina)
+        self.labela_skor.setGeometry(20 * self.razmera_sirina, 30 * self.razmera_visina, 200 * self.razmera_sirina, 20 * self.razmera_visina)
+
+        self.labela_game_over = QLabel(self)
+        self.labela_game_over.setFont(QFont('Arial', 13 * self.razmera_sirina))
+        self.labela_game_over.setText("GAME OVER")
+        self.labela_game_over.setStyleSheet("color: white; font-weight: bold")
+        self.labela_game_over.setGeometry(300 * self.razmera_sirina, 30 * self.razmera_visina, 200 * self.razmera_sirina, 20 * self.razmera_visina)
+        self.labela_game_over.setHidden(True)
+
+        self.labela_klikni_p = QLabel(self)
+        self.labela_klikni_p.setFont(QFont('Arial', 13 * self.razmera_sirina))
+        self.labela_klikni_p.setText("Klikni P za novu igru !")
+        self.labela_klikni_p.setStyleSheet("color: white; font-weight: bold")
+        self.labela_klikni_p.setGeometry(260 * self.razmera_sirina, 100 * self.razmera_visina, 220 * self.razmera_sirina, 30 * self.razmera_visina)
+        self.labela_klikni_p.setHidden(True)
 
         self.pomeri_dole_signal.connect(self.pomeranje_dole)
         self.pomeri_desno_signal.connect(self.pomeranje_desno)
@@ -70,13 +86,16 @@ class Window(QMainWindow):
         self.projektil_vanzemaljaca_kreiranje_signal.connect(self.kreiranje_projektila_vanzemaljaca)
         self.projektil_vanzemaljaca_kretanje_signal.connect(self.kretanje_projektila_vanzemaljaca)
 
+        self.nova_igra_signal.connect(self.nova_igra)
+        self.game_over_signal.connect(self.game_over)
+
         self.setFixedSize(700 * self.razmera_sirina, 800 * self.razmera_visina)
         vbox.addWidget(self.player)
         self.player.move(300 * self.razmera_sirina, 700 * self.razmera_visina)
         self.player.setFocus()
 
-        self.kreiranje_vanzemaljaca(vbox)
-        self.kreiranje_zivota(vbox)
+        self.kreiranje_vanzemaljaca()
+        self.kreiranje_zivota()
 
         self.kreiranje_stita()
 
@@ -87,17 +106,63 @@ class Window(QMainWindow):
         self.setWindowTitle("Space invader")
         self.show()
 
+    @pyqtSlot()
+    def game_over(self):
+        self.kretanje_vanzemaljca.gasenje_signal.emit()
+        if self.postoji_projectil:
+            self.projektil_kretanje.gasenje_signal.emit()
+            self.postoji_projectil = False
+            self.projectile.setParent(None)
+
+        if self.postoji_projectil_vanzemaljaca:
+            self.projektil_vanzemaljaca_kretanje.gasenje_signal.emit()
+            self.postoji_projectil_vanzemaljaca = False
+            self.projectile_vanzemaljaca.setParent(None)
+
+        self.player.game_over_signal.emit()
+        self.labela_game_over.setHidden(False)
+        self.labela_klikni_p.setHidden(False)
+
+    @pyqtSlot()
+    def nova_igra(self):
+        self.skor = 0
+        self.labela_skor.setText("SCORE: " + self.skor.__str__())
+        self.player.move(300 * self.razmera_sirina, 700 * self.razmera_visina)
+
+        for i in self.stitovi:
+            i.setParent(None)
+            self.layout().removeWidget(i)
+
+        self.stitovi.clear()
+        self.kreiranje_stita()
+
+        self.lista_zivota.clear()
+        self.kreiranje_zivota()
+
+        self.labela_game_over.setHidden(True)
+        self.labela_klikni_p.setHidden(True)
+
+        for i in self.aliens:
+            i.setParent(None)
+            self.layout().removeWidget(i)
+
+        self.aliensZaPucanje.clear()
+        self.aliens.clear()
+        self.kreiranje_vanzemaljaca()
+        self.kretanje_vanzemaljca = kretanje_vanzemaljaca_thread(self)
+        self.kretanje_vanzemaljca.start()
+
     @pyqtSlot(int)
     def pomeranje_dole(self, i):
         self.aliens[i].move(self.aliens[i].x(), self.aliens[i].y() + 20 * self.razmera_visina)
 
     @pyqtSlot(int)
     def pomeranje_desno(self, i):
-        self.aliens[i].move(self.aliens[i].x() + 10 * self.razmera_sirina, self.aliens[i].y())
+        self.aliens[i].move(self.aliens[i].x() + 15 * self.razmera_sirina, self.aliens[i].y())
 
     @pyqtSlot(int)
     def pomeranje_levo(self, i):
-        self.aliens[i].move(self.aliens[i].x() - 10 * self.razmera_sirina, self.aliens[i].y())
+        self.aliens[i].move(self.aliens[i].x() - 15 * self.razmera_sirina, self.aliens[i].y())
 
     @pyqtSlot(int)
     def pomeranje_igraca(self, i):
@@ -119,15 +184,15 @@ class Window(QMainWindow):
     def kreiranje_stita(self):
         stit = Stit(self)
         self.layout().addWidget(stit)
-        stit.move(100 * self.razmera_sirina, 470 * self.razmera_visina)
+        stit.move(100 * self.razmera_sirina, 600 * self.razmera_visina)
         self.stitovi.append(stit)
         stit = Stit(self)
         self.layout().addWidget(stit)
-        stit.move(300 * self.razmera_sirina, 470 * self.razmera_visina)
+        stit.move(300 * self.razmera_sirina, 600 * self.razmera_visina)
         self.stitovi.append(stit)
         stit = Stit(self)
         self.layout().addWidget(stit)
-        stit.move(500 * self.razmera_sirina, 470 * self.razmera_visina)
+        stit.move(500 * self.razmera_sirina, 600 * self.razmera_visina)
         self.stitovi.append(stit)
 
     @pyqtSlot(int)
@@ -137,7 +202,7 @@ class Window(QMainWindow):
             self.projectile.setParent(None)
             self.postoji_projectil = False
         else:
-            self.projectile.move(self.projectile.x(), self.projectile.y() - 10 * self.razmera_visina)
+            self.projectile.move(self.projectile.x(), self.projectile.y() - 20 * self.razmera_visina)
 
         for i in reversed(self.aliens):
             if i.postoji:
@@ -181,7 +246,6 @@ class Window(QMainWindow):
 
     @pyqtSlot(int)
     def kretanje_projektila_vanzemaljaca(self, i):
-
         if i == 0:
             self.projectile_vanzemaljaca.move(self.projectile_vanzemaljaca.x(), 800 * self.razmera_visina)
             self.projectile_vanzemaljaca.setParent(None)
@@ -196,13 +260,17 @@ class Window(QMainWindow):
                     if i.postoji:
                         i.setParent(None)
                         self.lista_zivota[self.lista_zivota.index(i)].postoji = False
-                        self.lista_preostalih_zivota.remove(i)
+                        self.lista_zivota.remove(i)
                         self.projectile_vanzemaljaca.setParent(None)
                         self.postoji_projectil_vanzemaljaca = False
                         self.projektil_vanzemaljaca_kretanje.gasenje_signal.emit()
                         break
+
+                if len(self.lista_zivota) == 0:
+                    self.game_over_signal.emit()
+
         if (self.postoji_projectil_vanzemaljaca):
-            for i in reversed(self.stitovi):
+            for i in self.stitovi:
                 if (self.projectile_vanzemaljaca.y() >= i.y() and self.projectile_vanzemaljaca.y() <= i.y() + 60 * self.razmera_visina) and (
                         self.projectile_vanzemaljaca.x() >= i.x() and self.projectile_vanzemaljaca.x() <= i.x() + 80 * self.razmera_visina):
                     if (i.nivo_ostecenja == 0):
@@ -229,63 +297,69 @@ class Window(QMainWindow):
                     self.postoji_projectil_vanzemaljaca = False
                     break
 
-    def kreiranje_vanzemaljaca(self, vbox):
+    def kreiranje_vanzemaljaca(self):
         slika = "alien2.png"
         red = 1
         kolona = 1
         for i in range(55):
             if i == 0:
                 alien = Alien(slika, red, kolona, self)
-                vbox.addWidget(alien)
+                self.layout().addWidget(alien)
                 alien.move(70 * self.razmera_sirina, 200 * self.razmera_visina)
                 self.aliens.append(alien)
                 self.aliensZaPucanje.append(alien)
             elif i != 0 and i % 11 == 0:
                 red += 1
-                kolona = 1;
+                kolona = 1
                 if red == 2 or red == 3:
                     slika = "alien.png"
                 else:
                     slika = "alien3.png"
                 alien = Alien(slika, red, kolona, self)
-                vbox.addWidget(alien)
+                self.layout().addWidget(alien)
                 alien.move(self.aliens[i-11].x(), self.aliens[i-11].y() + 40 * self.razmera_visina)
                 self.aliens.append(alien)
                 self.aliensZaPucanje.append(alien)
             else:
                 kolona += 1
                 alien = Alien(slika, red, kolona, self)
-                vbox.addWidget(alien)
+                self.layout().addWidget(alien)
                 alien.move(self.aliens[i-1].x() + 50 * self.razmera_sirina, self.aliens[i-1].y())
                 self.aliens.append(alien)
                 self.aliensZaPucanje.append(alien)
 
 
 
-    def kreiranje_zivota(self, vbox):
+    def kreiranje_zivota(self):
         zivot = Zivot(self)
-        vbox.addWidget(zivot)
+        self.layout().addWidget(zivot)
         zivot.move(580 * self.razmera_sirina, 20 * self.razmera_visina)
         self.lista_zivota.append(zivot)
-        self.lista_preostalih_zivota.append(zivot)
 
         zivot = Zivot(self)
-        vbox.addWidget(zivot)
+        self.layout().addWidget(zivot)
         zivot.move(620 * self.razmera_sirina, 20 * self.razmera_visina)
         self.lista_zivota.append(zivot)
-        self.lista_preostalih_zivota.append(zivot)
 
         zivot = Zivot(self)
-        vbox.addWidget(zivot)
+        self.layout().addWidget(zivot)
         zivot.move(660 * self.razmera_sirina, 20 * self.razmera_visina)
         self.lista_zivota.append(zivot)
-        self.lista_preostalih_zivota.append(zivot)
 
 
 
 class kretanje_vanzemaljaca_thread(QThread):
+
+    gasenje_signal = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.gasenje = False
+        self.gasenje_signal.connect(self.izlaz)
+
+    @pyqtSlot()
+    def izlaz(self):
+        self.gasenje = True
 
     def run(self):
         kretanje_desno = False
@@ -295,9 +369,33 @@ class kretanje_vanzemaljaca_thread(QThread):
 
         korak = 11
 
-        while True:
+        spavanje_niti = 1
+        broj_zivih = len(self.parent().aliensZaPucanje)
+        vreme_za_pucanje = 0
+        granica_za_pucanje = 1
+
+        while self.gasenje is False:
+            if broj_zivih <= 44 and broj_zivih > 34:
+                spavanje_niti = 0.8
+            elif broj_zivih <= 33 and broj_zivih > 23:
+                spavanje_niti = 0.6
+            elif broj_zivih <= 22 and broj_zivih > 12:
+                spavanje_niti = 0.5
+            elif broj_zivih <= 11 and broj_zivih > 6:
+                granica_za_pucanje = 0.6
+                spavanje_niti = 0.3
+            elif broj_zivih <= 5 and broj_zivih > 3:
+                granica_za_pucanje = 0.4
+                spavanje_niti = 0.2
+            elif broj_zivih == 2:
+                spavanje_niti = 0.1
+            elif broj_zivih == 1:
+                granica_za_pucanje = 0.2
+                spavanje_niti = 0.005
+
             if nova_iteracija == False:
-                time.sleep(1)
+                time.sleep(spavanje_niti)
+                vreme_za_pucanje += spavanje_niti
             br = 0
 
             indexVanzemaljca = -1
@@ -329,14 +427,14 @@ class kretanje_vanzemaljaca_thread(QThread):
                     self.parent().pomeri_dole_signal.emit(self.parent().aliens.index(i))
                     br += 1
                     if br % 11 == 0:
-                        time.sleep(0.05)
+                        time.sleep(0.05 * spavanje_niti)
             elif kretanje_desno:
                 if self.parent().aliens[indexVanzemaljca].x() + 50 * self.parent().razmera_sirina <= 650 * self.parent().razmera_sirina:
                     for i in reversed(self.parent().aliens):
                         self.parent().pomeri_desno_signal.emit(self.parent().aliens.index(i))
                         br += 1
                         if br % 11 == 0:
-                            time.sleep(0.05)
+                            time.sleep(0.05 * spavanje_niti)
                 else:
                     kretanje_desno = False
                     dosao_do_ivice = True
@@ -346,7 +444,7 @@ class kretanje_vanzemaljaca_thread(QThread):
                         self.parent().pomeri_levo_signal.emit(self.parent().aliens.index(i))
                         br += 1
                         if br % 11 == 0:
-                            time.sleep(0.05)
+                            time.sleep(0.05 * spavanje_niti)
                 else:
                     kretanje_desno = True
                     dosao_do_ivice = True
@@ -361,8 +459,25 @@ class kretanje_vanzemaljaca_thread(QThread):
                 dosao_do_ivice = False
                 izvrseno_pomeranje_dole = False
 
-            if(self.parent().postoji_projectil_vanzemaljaca == False):
-                self.parent().projektil_vanzemaljaca_kreiranje_signal.emit()
+            dosao_do_dna = False
+
+            if dosao_do_ivice:
+                for i in reversed(self.parent().aliens):
+                    if i.postoji:
+                        if i.y() > 560:
+                            dosao_do_dna = True
+                            self.parent().game_over_signal.emit()
+                            break
+
+            if dosao_do_dna:
+                break
+
+            if vreme_za_pucanje >= granica_za_pucanje and self.gasenje is False:
+                if self.parent().postoji_projectil_vanzemaljaca == False:
+                    self.parent().projektil_vanzemaljaca_kreiranje_signal.emit()
+                    vreme_za_pucanje = 0
+
+            broj_zivih = len(self.parent().aliensZaPucanje)
 
 
 

@@ -10,6 +10,8 @@ import sys
 
 class Player(QLabel):
 
+    game_over_signal = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         slika = QPixmap("rocket.png")
@@ -17,23 +19,30 @@ class Player(QLabel):
         self.resize(80 * self.parent().razmera_sirina, 70 * self.parent().razmera_visina)
         self.keylist = []
         self.keys = []
-        self.dozvola = True
         self.a_odpusteno = False
         self.d_odpusteno = False
-        self.space_odpusteno = False
+        self.game_over = False
+        self.game_over_signal.connect(self.gasenje)
 
+    def gasenje(self):
+        self.game_over = True
 
     def keyPressEvent(self, event):
-        if(event.key() == Qt.Key_A):
-            nit = Thread(target=self.pritisnutoA, args=[])
-            nit.start()
-        if (event.key() == Qt.Key_D):
-            nit = Thread(target=self.pritisnutoD, args=[])
-            nit.start()
-        if event.key() == Qt.Key_Space and self.dozvola:
-            nit = Thread(target=self.pritisnut_space, args=[])
-            nit.start()
-
+        if self.game_over is False:
+            if (event.key() == Qt.Key_A):
+                nit = Thread(target=self.pritisnutoA, args=[])
+                nit.start()
+            if (event.key() == Qt.Key_D):
+                nit = Thread(target=self.pritisnutoD, args=[])
+                nit.start()
+            if event.key() == Qt.Key_Space:
+                nit = Thread(target=self.pritisnut_space, args=[])
+                nit.start()
+        if (event.key() == Qt.Key_P and self.game_over):
+            self.parent().nova_igra_signal.emit()
+            self.game_over = False
+            self.a_odpusteno = False
+            self.d_odpusteno = False
 
     def keyReleaseEvent(self, event):
         if (event.key() == Qt.Key_A):
@@ -50,7 +59,7 @@ class Player(QLabel):
 
 
     def pritisnutoA(self):
-        while self.a_odpusteno != True:
+        while self.a_odpusteno != True and self.game_over is False:
             self.parent().player_kretanje_signal.emit(1)
             time.sleep(0.05)
 
@@ -58,7 +67,7 @@ class Player(QLabel):
 
 
     def pritisnutoD(self):
-        while self.d_odpusteno != True:
+        while self.d_odpusteno != True and self.game_over is False:
             self.parent().player_kretanje_signal.emit(0)
             time.sleep(0.05)
 
