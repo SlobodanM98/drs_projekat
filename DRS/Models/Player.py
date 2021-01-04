@@ -39,7 +39,7 @@ class Player(QLabel):
                 nit = Thread(target=self.pritisnut_space, args=[])
                 nit.start()
         if (event.key() == Qt.Key_P and self.game_over):
-            self.parent().nova_igra_signal.emit()
+            self.parent().nova_igra_signal.emit(0)
             self.game_over = False
             self.a_odpusteno = False
             self.d_odpusteno = False
@@ -54,7 +54,7 @@ class Player(QLabel):
 
 
     def pritisnut_space(self):
-        if (self.parent().postoji_projectil == False):
+        if (self.parent().postoji_projectil == False and self.game_over is False):
             self.parent().projektil_kreiranje_signal.emit()
 
 
