@@ -10,5 +10,5 @@ class Stit(QLabel):
         super().__init__(parent)
         self.nivo_ostecenja = 0
         slika_stit = QPixmap("Stit.png")
-        self.setPixmap(slika_stit.scaled(80 * self.parent().razmera_sirina, 60 * self.parent().razmera_visina))
-        self.resize(80 * self.parent().razmera_sirina, 60 * self.parent().razmera_visina)
+        self.setPixmap(slika_stit.scaled(70 * self.parent().razmera_sirina, 50 * self.parent().razmera_visina))
+        self.resize(70 * self.parent().razmera_sirina, 50 * self.parent().razmera_visina)

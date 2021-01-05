@@ -213,15 +213,23 @@ class Window(QMainWindow):
     def kreiranje_stita(self):
         stit = Stit(self)
         self.layout().addWidget(stit)
-        stit.move(100 * self.razmera_sirina, 600 * self.razmera_visina)
+        stit.move(60 * self.razmera_sirina, 600 * self.razmera_visina)
         self.stitovi.append(stit)
         stit = Stit(self)
         self.layout().addWidget(stit)
-        stit.move(300 * self.razmera_sirina, 600 * self.razmera_visina)
+        stit.move(180 * self.razmera_sirina, 600 * self.razmera_visina)
         self.stitovi.append(stit)
         stit = Stit(self)
         self.layout().addWidget(stit)
-        stit.move(500 * self.razmera_sirina, 600 * self.razmera_visina)
+        stit.move(310 * self.razmera_sirina, 600 * self.razmera_visina)
+        self.stitovi.append(stit)
+        stit = Stit(self)
+        self.layout().addWidget(stit)
+        stit.move(440 * self.razmera_sirina, 600 * self.razmera_visina)
+        self.stitovi.append(stit)
+        stit = Stit(self)
+        self.layout().addWidget(stit)
+        stit.move(560 * self.razmera_sirina, 600 * self.razmera_visina)
         self.stitovi.append(stit)
 
     @pyqtSlot(int)
@@ -233,19 +241,20 @@ class Window(QMainWindow):
         else:
             self.projectile.move(self.projectile.x(), self.projectile.y() - 20 * self.razmera_visina)
 
-        for i in reversed(self.aliens):
-            if i.postoji:
-                if (self.projectile.y() >= i.y() and self.projectile.y() <= i.y() + 20 * self.razmera_visina) and (
-                        self.projectile.x() >= i.x() and self.projectile.x() <= i.x() + 30 * self.razmera_visina):
-                    self.aliens[self.aliens.index(i)].postoji = False
-                    i.setParent(None)
-                    self.aliensZaPucanje.remove(i)
-                    self.projectile.setParent(None)
-                    self.postoji_projectil = False
-                    self.skor += 1
-                    self.labela_skor.setText("SCORE: " + self.skor.__str__())
-                    self.projektil_kretanje.gasenje_signal.emit()
-                    break
+        if self.postoji_projectil:
+            for i in reversed(self.aliens):
+                if i.postoji:
+                    if (self.projectile.y() >= i.y() and self.projectile.y() <= i.y() + 20 * self.razmera_visina) and (
+                            self.projectile.x() >= i.x() and self.projectile.x() <= i.x() + 30 * self.razmera_visina):
+                        self.aliens[self.aliens.index(i)].postoji = False
+                        i.setParent(None)
+                        self.aliensZaPucanje.remove(i)
+                        self.projectile.setParent(None)
+                        self.postoji_projectil = False
+                        self.skor += 1
+                        self.labela_skor.setText("SCORE: " + self.skor.__str__())
+                        self.projektil_kretanje.gasenje_signal.emit()
+                        break
         if len(self.aliensZaPucanje) == 0:
             self.game_over_signal.emit(1)
         if(self.postoji_projectil_vanzemaljaca != False):
@@ -257,6 +266,34 @@ class Window(QMainWindow):
                 self.projectile_vanzemaljaca.setParent(None)
                 self.postoji_projectil_vanzemaljaca = False
                 self.projektil_vanzemaljaca_kretanje.gasenje_signal.emit()
+
+        if (self.postoji_projectil):
+            for i in self.stitovi:
+                if (self.projectile.y() >= i.y() and self.projectile.y() <= i.y() + 50 * self.razmera_visina) and (
+                        self.projectile.x() >= i.x() and self.projectile.x() <= i.x() + 70 * self.razmera_visina):
+                    if (i.nivo_ostecenja == 0):
+                        slika_stita = QPixmap("Ostecenje_1.png")
+                        i.setPixmap(slika_stita.scaled(70 * self.razmera_sirina, 50 * self.razmera_visina))
+                        i.nivo_ostecenja += 1
+                    elif (i.nivo_ostecenja == 1):
+                        slika_stita = QPixmap("Ostecenje_2.png")
+                        i.setPixmap(slika_stita.scaled(70 * self.razmera_sirina, 50 * self.razmera_visina))
+                        i.nivo_ostecenja += 1
+                    elif (i.nivo_ostecenja == 2):
+                        slika_stita = QPixmap("Ostecenje_3.png")
+                        i.setPixmap(slika_stita.scaled(70 * self.razmera_sirina, 50 * self.razmera_visina))
+                        i.nivo_ostecenja += 1
+                    elif (i.nivo_ostecenja == 3):
+                        slika_stita = QPixmap("Ostecenje_4.png")
+                        i.setPixmap(slika_stita.scaled(70 * self.razmera_sirina, 50 * self.razmera_visina))
+                        i.nivo_ostecenja += 1
+                    else:
+                        i.setParent(None)
+                        self.stitovi.remove(i)
+                    self.projektil_kretanje.gasenje_signal.emit()
+                    self.projectile.setParent(None)
+                    self.postoji_projectil = False
+                    break
 
 
     @pyqtSlot()
