@@ -21,7 +21,10 @@ class Player(QLabel):
         self.keys = []
         self.a_odpusteno = False
         self.d_odpusteno = False
+        self.na_strelice = False
+        self.na_ad = False
         self.game_over = False
+        self.izabrano_kretanje = False
         self.game_over_signal.connect(self.gasenje)
 
     def gasenje(self):
@@ -29,28 +32,58 @@ class Player(QLabel):
 
     def keyPressEvent(self, event):
         if self.game_over is False:
-            if (event.key() == Qt.Key_A):
-                nit = Thread(target=self.pritisnutoA, args=[])
-                nit.start()
-            if (event.key() == Qt.Key_D):
-                nit = Thread(target=self.pritisnutoD, args=[])
-                nit.start()
+            if self.na_ad:
+                if event.key() == Qt.Key_A:
+                    nit = Thread(target=self.pritisnutoA, args=[])
+                    nit.start()
+                if event.key() == Qt.Key_D:
+                    nit = Thread(target=self.pritisnutoD, args=[])
+                    nit.start()
+            elif self.na_strelice:
+                if event.key() == Qt.Key_Right:
+                    nit2 = Thread(target=self.pritisnutoD, args=[])
+                    nit2.start()
+                if event.key() == Qt.Key_Left:
+                    nit2 = Thread(target=self.pritisnutoA, args=[])
+                    nit2.start()
             if event.key() == Qt.Key_Space:
                 nit = Thread(target=self.pritisnut_space, args=[])
                 nit.start()
-        if (event.key() == Qt.Key_P and self.game_over):
+        if event.key() == Qt.Key_P and self.game_over:
             self.parent().nova_igra_signal.emit(0)
             self.game_over = False
             self.a_odpusteno = False
             self.d_odpusteno = False
+            self.na_strelice = False
+            self.na_ad = False
+            self.parent().labela_izbor_igranja.setHidden(False)
+            self.izabrano_kretanje = False
+        if event.key() == Qt.Key_S and self.izabrano_kretanje is False:
+            self.na_strelice = True
+            self.izabrano_kretanje = True
+            self.parent().pokreni_vanzemaljce_signal.emit()
+            self.parent().labela_izbor_igranja.setHidden(True)
+        if event.key() == Qt.Key_G and self.izabrano_kretanje is False:
+            self.na_ad = True
+            self.izabrano_kretanje = True
+            self.parent().pokreni_vanzemaljce_signal.emit()
+            self.parent().labela_izbor_igranja.setHidden(True)
 
     def keyReleaseEvent(self, event):
-        if (event.key() == Qt.Key_A):
-            self.a_odpusteno = True
-        if (event.key() == Qt.Key_D):
-            self.d_odpusteno = True
-        if (event.key() == Qt.Key_Space):
+        if self.na_ad:
+            if event.key() == Qt.Key_A:
+                self.a_odpusteno = True
+            if event.key() == Qt.Key_D:
+                self.d_odpusteno = True
+        elif self.na_strelice:
+            if event.key() == Qt.Key_Right:
+                self.d_odpusteno = True
+            if event.key() == Qt.Key_Left:
+                self.a_odpusteno = True
+        if event.key() == Qt.Key_Space:
             self.space_odpusteno = True
+
+
 
 
     def pritisnut_space(self):

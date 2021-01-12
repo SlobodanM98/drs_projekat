@@ -29,6 +29,8 @@ class Window(QMainWindow):
     game_over_signal = pyqtSignal(int)
     sleep_signal = pyqtSignal()
 
+    pokreni_vanzemaljce_signal = pyqtSignal()
+
     def __init__(self):
         super().__init__()
 
@@ -59,6 +61,12 @@ class Window(QMainWindow):
         self.labela_skor.setText("SCORE: " + self.skor.__str__())
         self.labela_skor.setStyleSheet("color: white; font-weight: bold")
         self.labela_skor.setGeometry(20 * self.razmera_sirina, 30 * self.razmera_visina, 200 * self.razmera_sirina, 20 * self.razmera_visina)
+
+        self.labela_izbor_igranja = QLabel(self)
+        self.labela_izbor_igranja.setFont(QFont('Arial', 13 * self.razmera_sirina))
+        self.labela_izbor_igranja.setText("Izbor igranja: S->Strelice, G-> A D")
+        self.labela_izbor_igranja.setStyleSheet("color: white; font-weight: bold")
+        self.labela_izbor_igranja.setGeometry(200 * self.razmera_sirina, 60 * self.razmera_visina, 400 * self.razmera_sirina, 20 * self.razmera_visina)
 
         self.labela_game_over = QLabel(self)
         self.labela_game_over.setFont(QFont('Arial', 13 * self.razmera_sirina))
@@ -91,6 +99,8 @@ class Window(QMainWindow):
         self.game_over_signal.connect(self.game_over)
         self.sleep_signal.connect(self.sleepp)
 
+        self.pokreni_vanzemaljce_signal.connect(self.pokreni_vanzemaljce)
+
         self.setFixedSize(700 * self.razmera_sirina, 800 * self.razmera_visina)
         vbox.addWidget(self.player)
         self.player.move(300 * self.razmera_sirina, 700 * self.razmera_visina)
@@ -100,8 +110,6 @@ class Window(QMainWindow):
         self.kreiranje_zivota()
 
         self.kreiranje_stita()
-
-        self.kretanje_vanzemaljca.start()
 
         self.setLayout(vbox)
         self.setGeometry(600 * self.razmera_sirina, 100 * self.razmera_sirina, 500 * self.razmera_sirina, 500 * self.razmera_sirina)
@@ -138,6 +146,10 @@ class Window(QMainWindow):
 
         if(novi_nivo == 1):
             self.nova_igra_signal.emit(1)
+
+    def pokreni_vanzemaljce(self):
+        self.kretanje_vanzemaljca.start()
+
 
     @pyqtSlot(int)
     def nova_igra(self, novi_nivo):
@@ -178,7 +190,6 @@ class Window(QMainWindow):
             self.labela_klikni_p.setHidden(True)
 
             self.kretanje_vanzemaljca = kretanje_vanzemaljaca_thread(self)
-            self.kretanje_vanzemaljca.start()
 
 
     @pyqtSlot(int)
@@ -196,9 +207,11 @@ class Window(QMainWindow):
     @pyqtSlot(int)
     def pomeranje_igraca(self, i):
         if i == 0:
-            self.player.move(self.player.x() + 10 * self.razmera_sirina, self.player.y())
+            if self.player.x() <= self.razmera_sirina * 650:
+                self.player.move(self.player.x() + 10 * self.razmera_sirina, self.player.y())
         else:
-            self.player.move(self.player.x() - 10 * self.razmera_sirina, self.player.y())
+            if self.player.x() >= self.razmera_sirina * 10:
+                self.player.move(self.player.x() - 10 * self.razmera_sirina, self.player.y())
 
     @pyqtSlot()
     def kreiranje_projektila(self):
