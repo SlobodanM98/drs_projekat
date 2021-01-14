@@ -116,6 +116,23 @@ class Window(QMainWindow):
         self.setWindowTitle("Space invader")
         self.show()
 
+    def closeEvent(self, event):
+        self.player.game_over_signal.emit()
+
+        self.kretanje_vanzemaljca.gasenje_signal.emit()
+        self.kretanje_vanzemaljca.wait(1000)
+        self.kretanje_vanzemaljca.terminate()
+
+        if(self.postoji_projectil_vanzemaljaca == True):
+            self.projektil_vanzemaljaca_kretanje.gasenje_signal.emit()
+            self.projektil_vanzemaljaca_kretanje.wait(1000)
+            self.projektil_vanzemaljaca_kretanje.terminate()
+
+        if(self.postoji_projectil == True):
+            self.projektil_kretanje.gasenje_signal.emit()
+            self.projektil_kretanje.wait(1000)
+            self.projektil_kretanje.terminate()
+
     @pyqtSlot()
     def sleepp(self):
         self.labela_game_over.setHidden(True)
