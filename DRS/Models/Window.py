@@ -1,8 +1,9 @@
+import datetime
 import time
 
 from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtWidgets import QMainWindow, QTextEdit, QAction, QFileDialog, QApplication, QDesktopWidget, QLabel, QWidget, \
-    QHBoxLayout, QVBoxLayout
+    QHBoxLayout, QVBoxLayout, QPushButton
 from PyQt5.QtCore import Qt, pyqtSlot, QThread, pyqtSignal
 from Models.Player import Player
 from Models.Projectile import Projectile
@@ -27,7 +28,9 @@ class Window(QMainWindow):
 
     nova_igra_signal = pyqtSignal(int)
     game_over_signal = pyqtSignal(int)
+
     sleep_signal = pyqtSignal()
+    povratak_na_pocetak_signal = pyqtSignal()
 
     pokreni_vanzemaljce_signal = pyqtSignal()
 
@@ -38,7 +41,6 @@ class Window(QMainWindow):
         self.razmera_sirina = ekran.width() / 1920
         self.razmera_visina = ekran.height() / 1080
 
-        self.player = Player(self)
         self.aliens = []
         self.aliensZaPucanje = []
         self.lista_zivota = []
@@ -49,24 +51,66 @@ class Window(QMainWindow):
         self.postoji_projectil_vanzemaljaca = False
         self.skor = 0
         self.pogodio_playera = False
+        self.ucitan_ui = False
+        self.is_game_over = False
 
-        self.set_ui()
+        self.pocetni_prozor()
+
+    def pocetni_prozor(self):
+        self.dugme_jedan_igrac = QPushButton('Jedan igrac', self)
+        self.dugme_jedan_igrac.setStyleSheet('''QPushButton {color: white; border: 1px solid; border-color: white}QPushButton:hover {background-color: #328930;}''')
+        self.dugme_jedan_igrac.setGeometry(280 * self.razmera_sirina, 300 * self.razmera_visina, 150 * self.razmera_sirina, 50 * self.razmera_visina)
+        self.dugme_jedan_igrac.setFont(QFont('Ariel', 12))
+        self.dugme_jedan_igrac.clicked.connect(self.jedan_igrac)
+        self.dugme_jedan_igrac.setHidden(False)
+
+        self.dugme_izadji = QPushButton('Izadji', self)
+        self.dugme_izadji.setStyleSheet('''QPushButton {color: white; border: 1px solid; border-color: white}QPushButton:hover {background-color: #328930;}''')
+        self.dugme_izadji.setGeometry(280 * self.razmera_sirina, 400 * self.razmera_visina, 150 * self.razmera_sirina, 50 * self.razmera_visina)
+        self.dugme_izadji.setFont(QFont('Ariel', 12))
+        self.dugme_izadji.clicked.connect(lambda:self.close())
+        self.dugme_izadji.setHidden(False)
+
+        self.setStyleSheet("background-color: black;")
+        self.setWindowTitle("Space invader")
+        self.setFixedSize(700 * self.razmera_sirina, 800 * self.razmera_visina)
+        self.show()
+
+    def jedan_igrac(self):
+        self.nova_igra_signal.emit(0)
+
+        self.dugme_jedan_igrac.setHidden(True)
+        self.dugme_izadji.setHidden(True)
+
+        if self.ucitan_ui is False:
+            self.player = Player(self)
+            self.set_ui()
+            self.ucitan_ui = True
+        else:
+            self.labela_game_over.setHidden(True)
+            self.labela_klikni_p.setHidden(True)
+            self.labela_skor.setHidden(False)
+            self.labela_izbor_igranja.setHidden(False)
+            self.player.setHidden(False)
+            self.labela_skor.setHidden(False)
+            self.player.game_on_signal.emit()
+            self.player.setFocus()
+            self.kretanje_vanzemaljca = kretanje_vanzemaljaca_thread(self)
 
     def set_ui(self):
-        self.setStyleSheet("background-color: black;")
-        vbox = QVBoxLayout(self)
-
         self.labela_skor = QLabel(self)
         self.labela_skor.setFont(QFont('Arial', 13 * self.razmera_sirina))
         self.labela_skor.setText("SCORE: " + self.skor.__str__())
         self.labela_skor.setStyleSheet("color: white; font-weight: bold")
         self.labela_skor.setGeometry(20 * self.razmera_sirina, 30 * self.razmera_visina, 200 * self.razmera_sirina, 20 * self.razmera_visina)
+        self.labela_skor.setHidden(False)
 
         self.labela_izbor_igranja = QLabel(self)
         self.labela_izbor_igranja.setFont(QFont('Arial', 13 * self.razmera_sirina))
         self.labela_izbor_igranja.setText("Izbor igranja: S->Strelice, G-> A D")
         self.labela_izbor_igranja.setStyleSheet("color: white; font-weight: bold")
         self.labela_izbor_igranja.setGeometry(200 * self.razmera_sirina, 60 * self.razmera_visina, 400 * self.razmera_sirina, 20 * self.razmera_visina)
+        self.labela_izbor_igranja.setHidden(False)
 
         self.labela_game_over = QLabel(self)
         self.labela_game_over.setFont(QFont('Arial', 13 * self.razmera_sirina))
@@ -97,12 +141,13 @@ class Window(QMainWindow):
 
         self.nova_igra_signal.connect(self.nova_igra)
         self.game_over_signal.connect(self.game_over)
+
         self.sleep_signal.connect(self.sleepp)
+        self.povratak_na_pocetak_signal.connect(self.povratak_na_pocetni_prozor)
 
         self.pokreni_vanzemaljce_signal.connect(self.pokreni_vanzemaljce)
 
-        self.setFixedSize(700 * self.razmera_sirina, 800 * self.razmera_visina)
-        vbox.addWidget(self.player)
+        self.layout().addWidget(self.player)
         self.player.move(300 * self.razmera_sirina, 700 * self.razmera_visina)
         self.player.setFocus()
 
@@ -110,11 +155,6 @@ class Window(QMainWindow):
         self.kreiranje_zivota()
 
         self.kreiranje_stita()
-
-        self.setLayout(vbox)
-        self.setGeometry(600 * self.razmera_sirina, 100 * self.razmera_sirina, 500 * self.razmera_sirina, 500 * self.razmera_sirina)
-        self.setWindowTitle("Space invader")
-        self.show()
 
     def closeEvent(self, event):
         self.player.game_over_signal.emit()
@@ -132,6 +172,30 @@ class Window(QMainWindow):
             self.projektil_kretanje.gasenje_signal.emit()
             self.projektil_kretanje.wait(1000)
             self.projektil_kretanje.terminate()
+
+    def povratak_na_pocetni_prozor(self):
+        self.is_game_over = False
+
+        for i in self.stitovi:
+            i.setParent(None)
+            self.layout().removeWidget(i)
+        self.stitovi.clear()
+
+        for i in self.aliens:
+            i.setParent(None)
+            self.layout().removeWidget(i)
+
+        self.aliensZaPucanje.clear()
+        self.aliens.clear()
+
+        self.labela_game_over.setHidden(True)
+        self.labela_klikni_p.setHidden(True)
+        self.labela_skor.setHidden(True)
+
+        self.player.setHidden(True)
+
+        self.dugme_jedan_igrac.setHidden(False)
+        self.dugme_izadji.setHidden(False)
 
     @pyqtSlot()
     def sleepp(self):
@@ -161,17 +225,19 @@ class Window(QMainWindow):
             self.labela_game_over.setHidden(False)
             self.labela_klikni_p.setHidden(False)
 
+            self.is_game_over = True
+            self.spavanje = sleep_thread(self)
+            self.spavanje.start()
+
         if(novi_nivo == 1):
             self.nova_igra_signal.emit(1)
 
     def pokreni_vanzemaljce(self):
         self.kretanje_vanzemaljca.start()
 
-
     @pyqtSlot(int)
     def nova_igra(self, novi_nivo):
-
-        if(novi_nivo == 0):
+        if(novi_nivo == 0 or novi_nivo == 3):
             self.skor = 0
             self.labela_skor.setText("SCORE: " + self.skor.__str__())
 
@@ -184,7 +250,7 @@ class Window(QMainWindow):
         self.stitovi.clear()
         self.kreiranje_stita()
 
-        if(novi_nivo == 0):
+        if(novi_nivo == 0 or novi_nivo == 3):
             self.lista_zivota.clear()
             self.kreiranje_zivota()
 
@@ -450,7 +516,10 @@ class sleep_thread(QThread):
 
     def run(self):
         time.sleep(2)
-        self.parent().sleep_signal.emit()
+        if self.parent().is_game_over:
+            self.parent().povratak_na_pocetak_signal.emit()
+        else:
+            self.parent().sleep_signal.emit()
 
 class kretanje_vanzemaljaca_thread(QThread):
 
@@ -470,6 +539,7 @@ class kretanje_vanzemaljaca_thread(QThread):
         dosao_do_ivice = False
         nova_iteracija = False
         izvrseno_pomeranje_dole = False
+        izvrseno_pomeranje_dole_za_vreme = False
 
         korak = 11
 
@@ -478,29 +548,34 @@ class kretanje_vanzemaljaca_thread(QThread):
         vreme_za_pucanje = 0
         granica_za_pucanje = 1
 
+        vreme_izvrsenja = 0.3
+
         while self.gasenje is False:
-            if broj_zivih <= 44 and broj_zivih > 34:
-                spavanje_niti = 0.8
-            elif broj_zivih <= 33 and broj_zivih > 23:
-                spavanje_niti = 0.6
-            elif broj_zivih <= 22 and broj_zivih > 12:
-                spavanje_niti = 0.5
-            elif broj_zivih <= 11 and broj_zivih > 6:
+            if broj_zivih <= 55 and broj_zivih > 45:
+                spavanje_niti = 1.3 - vreme_izvrsenja
+            if broj_zivih <= 45 and broj_zivih > 34:
+                spavanje_niti = 1.1 - vreme_izvrsenja
+            elif broj_zivih <= 34 and broj_zivih > 23:
+                spavanje_niti = 0.9 - vreme_izvrsenja
+            elif broj_zivih <= 23 and broj_zivih > 12:
+                spavanje_niti = 0.8 - vreme_izvrsenja
+            elif broj_zivih <= 12 and broj_zivih > 6:
                 granica_za_pucanje = 0.6
-                spavanje_niti = 0.3
-            elif broj_zivih <= 5 and broj_zivih > 3:
+                spavanje_niti = 0.6 - vreme_izvrsenja
+            elif broj_zivih <= 6 and broj_zivih > 2:
                 granica_za_pucanje = 0.4
-                spavanje_niti = 0.2
+                spavanje_niti = 0.5 - vreme_izvrsenja
             elif broj_zivih == 2:
-                spavanje_niti = 0.1
+                spavanje_niti = 0.4 - vreme_izvrsenja
             elif broj_zivih == 1:
                 granica_za_pucanje = 0.5
-                spavanje_niti = 0.5
+                spavanje_niti = 0.2 - vreme_izvrsenja
 
             if nova_iteracija == False:
                 time.sleep(spavanje_niti)
                 vreme_za_pucanje += spavanje_niti
             br = 0
+            pocetak = datetime.datetime.now()
 
             indexVanzemaljca = -1
             pronadjenIndexVanzemaljca = False
@@ -556,8 +631,9 @@ class kretanje_vanzemaljaca_thread(QThread):
 
             if dosao_do_ivice and nova_iteracija:
                 izvrseno_pomeranje_dole = True
+                izvrseno_pomeranje_dole_za_vreme = True
 
-            if dosao_do_ivice and izvrseno_pomeranje_dole == False:
+            if dosao_do_ivice and izvrseno_pomeranje_dole is False:
                 nova_iteracija = True
             else:
                 nova_iteracija = False
@@ -584,12 +660,17 @@ class kretanje_vanzemaljaca_thread(QThread):
                 break
 
             if vreme_za_pucanje >= granica_za_pucanje and self.gasenje is False:
-                if self.parent().postoji_projectil_vanzemaljaca == False:
+                if self.parent().postoji_projectil_vanzemaljaca is False:
                     self.parent().projektil_vanzemaljaca_kreiranje_signal.emit()
                     vreme_za_pucanje = 0
 
             broj_zivih = len(self.parent().aliensZaPucanje)
 
+            if izvrseno_pomeranje_dole_za_vreme is False:
+                kraj = datetime.datetime.now()
+                vreme_izvrsenja = (pocetak - kraj).total_seconds() * -1
+            else:
+                izvrseno_pomeranje_dole_za_vreme = False
 
 
 class kretanje_projektila_thread(QThread):
