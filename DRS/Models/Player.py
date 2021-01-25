@@ -97,8 +97,6 @@ class Player(QLabel):
 
 
 
-
-
     def pritisnut_space(self, pritisnuto):
         if pritisnuto == 0:
             if (self.parent().postoji_projectils[0] == False):

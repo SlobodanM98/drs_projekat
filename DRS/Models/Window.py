@@ -35,6 +35,8 @@ class Window(QMainWindow):
     pokreni_vanzemaljce_signal = pyqtSignal()
 
     nova_runda_signal = pyqtSignal()
+    sila_signal = pyqtSignal(list)
+    prikaz_sile_signal = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -52,6 +54,8 @@ class Window(QMainWindow):
         self.projectiles = []
         self.projectiles.append(Projectile(self))
         self.projectiles.append(Projectile(self))
+        self.projectiles[0].setHidden(True)
+        self.projectiles[1].setHidden(True)
         #self.projectile2 = None
         self.postoji_projectils = []
         self.postoji_projectils.append(False)
@@ -159,6 +163,8 @@ class Window(QMainWindow):
             self.players[0].setFocus()
             self.kretanje_vanzemaljca = kretanje_vanzemaljaca_thread(self)
             self.kretanje_vanzemaljca.start()
+            self.delovanje_sile = sila_thread(self)
+            self.delovanje_sile.start()
 
     def dva_igraca(self):
         self.nova_igra_signal.emit([0, 1])
@@ -194,6 +200,8 @@ class Window(QMainWindow):
             self.players[0].setFocus()
             self.kretanje_vanzemaljca = kretanje_vanzemaljaca_thread(self)
             self.kretanje_vanzemaljca.start()
+            self.delovanje_sile = sila_thread(self)
+            self.delovanje_sile.start()
 
         self.labela_game_over.setText("GAME OVER")
         self.labela_game_over.setGeometry(300 * self.razmera_sirina, 30 * self.razmera_visina, 200 * self.razmera_sirina, 20 * self.razmera_visina)
@@ -305,6 +313,15 @@ class Window(QMainWindow):
         self.labela_klikni_p.setGeometry(260 * self.razmera_sirina, 100 * self.razmera_visina, 220 * self.razmera_sirina, 30 * self.razmera_visina)
         self.labela_klikni_p.setHidden(True)
 
+        self.lbl = QLabel(self)
+        slika = QPixmap("grom.png")
+        self.lbl.setPixmap(slika.scaled(15 * self.razmera_sirina, 20 * self.razmera_visina))
+        self.lbl.resize(15 * self.razmera_sirina, 20 * self.razmera_visina)
+        self.layout().addWidget(self.lbl)
+        self.lbl.move(320 * self.razmera_sirina, 670 * self.razmera_visina)
+        self.lbl.setHidden(True)
+
+
         self.pomeri_dole_signal.connect(self.pomeranje_dole)
         self.pomeri_desno_signal.connect(self.pomeranje_desno)
         self.pomeri_levo_signal.connect(self.pomeranje_levo)
@@ -327,6 +344,8 @@ class Window(QMainWindow):
         self.pokreni_vanzemaljce_signal.connect(self.pokreni_vanzemaljce)
 
         self.nova_runda_signal.connect(self.nova_runda)
+        self.sila_signal.connect(self.sila)
+        self.prikaz_sile_signal.connect(self.prikaz_sile)
 
         if self.players[0].dva_igraca:
             self.layout().addWidget(self.players[0])
@@ -352,30 +371,70 @@ class Window(QMainWindow):
         self.kretanje_vanzemaljca = kretanje_vanzemaljaca_thread(self)
         self.kretanje_vanzemaljca.start()
 
+        self.delovanje_sile = sila_thread(self)
+        self.delovanje_sile.start()
+
+    def prikaz_sile(self):
+        self.lbl.setHidden(False)
+
     def nova_runda(self):
         self.dva_igraca()
 
     def closeEvent(self, event):
-        self.players[0].game_over_signal.emit()
-        self.players[1].game_over_signal.emit()
+        if self.ucitan_ui is True:
+            self.players[0].game_over_signal.emit(0)
+            self.players[0].game_over_signal.emit(1)
+            self.kretanje_vanzemaljca.gasenje_signal.emit()
+            self.kretanje_vanzemaljca.wait(1000)
+            self.kretanje_vanzemaljca.terminate()
 
-        self.kretanje_vanzemaljca.gasenje_signal.emit()
-        self.kretanje_vanzemaljca.wait(1000)
-        self.kretanje_vanzemaljca.terminate()
+            self.delovanje_sile.gasenje_signal.emit()
+            self.delovanje_sile.wait(1000)
+            self.delovanje_sile.terminate()
 
-        if(self.postoji_projectil_vanzemaljaca == True):
-            self.projektil_vanzemaljaca_kretanje.gasenje_signal.emit()
-            self.projektil_vanzemaljaca_kretanje.wait(1000)
-            self.projektil_vanzemaljaca_kretanje.terminate()
+            if(self.postoji_projectil_vanzemaljaca == True):
+                self.projektil_vanzemaljaca_kretanje.gasenje_signal.emit()
+                self.projektil_vanzemaljaca_kretanje.wait(1000)
+                self.projektil_vanzemaljaca_kretanje.terminate()
 
-        if(self.postoji_projectils[0] == True):
-            self.projektil_kretanje.gasenje_signal.emit()
-            self.projektil_kretanje.wait(1000)
-            self.projektil_kretanje.terminate()
-        if (self.postoji_projectils[1] == True):
-            self.projektil_kretanje2.gasenje_signal.emit()
-            self.projektil_kretanje2.wait(1000)
-            self.projektil_kretanje2.terminate()
+            if(self.postoji_projectils[0] == True):
+                self.projektil_kretanje.gasenje_signal.emit()
+                self.projektil_kretanje.wait(1000)
+                self.projektil_kretanje.terminate()
+            if (self.postoji_projectils[1] == True):
+                self.projektil_kretanje2.gasenje_signal.emit()
+                self.projektil_kretanje2.wait(1000)
+                self.projektil_kretanje2.terminate()
+
+    @pyqtSlot(list)   #params[0] - dobra(0) ili losa(1) sila, params[1] - prvi(0) ili drugi(1) igrac
+    def sila(self, params):
+        if params[0] == 0:
+            if params[1] == 0:
+                brSrca = 0
+                for i in self.lista_zivota:
+                    if i.postoji is True:
+                        brSrca += 1
+                if brSrca == 1:
+                    self.lista_zivota[1].postoji = True
+                    self.lista_zivota[1].setHidden(False)
+                elif brSrca == 2:
+                    self.lista_zivota[0].postoji = True
+                    self.lista_zivota[0].setHidden(False)
+            elif params[1] == 1:
+                brSrca = 0
+                for i in self.lista_zivota2:
+                    if i.postoji is True:
+                        brSrca += 1
+                if brSrca == 1:
+                    self.lista_zivota2[1].postoji = True
+                    self.lista_zivota2[1].setHidden(False)
+                elif brSrca == 2:
+                    self.lista_zivota2[0].postoji = True
+                    self.lista_zivota2[0].setHidden(False)
+        elif params[0] == 1:
+            if self.postoji_projectil_vanzemaljaca:
+                self.players[params[1]].move(self.projectile_vanzemaljaca.x() - 15 * self.razmera_sirina, self.players[params[1]].y())
+        self.lbl.setHidden(True)
 
     def povratak_na_pocetni_prozor(self):
         self.is_game_over = False
@@ -425,9 +484,13 @@ class Window(QMainWindow):
         self.kretanje_vanzemaljca = kretanje_vanzemaljaca_thread(self)
         self.kretanje_vanzemaljca.start()
 
+        self.delovanje_sile = sila_thread(self)
+        self.delovanje_sile.start()
+
     @pyqtSlot(int)   # 0 - game over, 1 - novi nivo
     def game_over(self, novi_nivo):
         self.kretanje_vanzemaljca.gasenje_signal.emit()
+        self.delovanje_sile.gasenje_signal.emit()
 
         for i in range(2):
             if self.postoji_projectils[i]:
@@ -710,11 +773,15 @@ class Window(QMainWindow):
                     if index == 0:
                         for i in self.lista_zivota:
                             if i.postoji:
-                                i.setParent(None)
+                                i.setHidden(True)
                                 self.lista_zivota[self.lista_zivota.index(i)].postoji = False
-                                self.lista_zivota.remove(i)
+                                #self.lista_zivota.remove(i)
                                 self.projectile_vanzemaljaca.setParent(None)
-                                if(len(self.lista_zivota) == 0):
+                                brSrca = 0
+                                for i in self.lista_zivota:
+                                    if i.postoji is True:
+                                        brSrca += 1
+                                if(brSrca == 0):
                                     self.players[index].game_over_signal.emit(0)
                                     self.players[index].setHidden(True)
                                 self.postoji_projectil_vanzemaljaca = False
@@ -723,10 +790,14 @@ class Window(QMainWindow):
                     elif index == 1:
                         for i in self.lista_zivota2:
                             if i.postoji:
-                                i.setParent(None)
+                                i.setHidden(True)
                                 self.lista_zivota2[self.lista_zivota2.index(i)].postoji = False
-                                self.lista_zivota2.remove(i)
-                                if (len(self.lista_zivota2) == 0):
+                                #self.lista_zivota2.remove(i)
+                                brSrca = 0
+                                for i in self.lista_zivota2:
+                                    if i.postoji is True:
+                                        brSrca += 1
+                                if (brSrca == 0):
                                     self.players[0].game_over_signal.emit(1)
                                     self.players[index].setHidden(True)
                                 self.projectile_vanzemaljaca.setParent(None)
@@ -735,10 +806,21 @@ class Window(QMainWindow):
                                 break
 
                     if self.players[0].dva_igraca is False:
-                        if len(self.lista_zivota) == 0:
+                        brSrca = 0
+                        for i in self.lista_zivota:
+                            if i.postoji is True:
+                                brSrca += 1
+                        if brSrca == 0:
                             self.game_over_signal.emit(0)
                     else:
-                        if len(self.lista_zivota) + len(self.lista_zivota2) > 0:
+                        brSrca = 0
+                        for i in self.lista_zivota:
+                            if i.postoji is True:
+                                brSrca += 1
+                        for i in self.lista_zivota2:
+                            if i.postoji is True:
+                                brSrca += 1
+                        if brSrca == 0:
                             self.game_over_signal.emit(0)
 
         if (self.postoji_projectil_vanzemaljaca):
@@ -833,6 +915,48 @@ class Window(QMainWindow):
         self.layout().addWidget(zivot)
         zivot.move(660 * self.razmera_sirina, 90 * self.razmera_visina)
         self.lista_zivota2.append(zivot)
+
+class sila_thread(QThread):
+    gasenje_signal = pyqtSignal()
+
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.deluje_od = 250 * self.parent().razmera_sirina
+        self.deluje_do = 350 * self.parent().razmera_sirina
+        self.gasenje = False
+        self.gasenje_signal.connect(self.izlaz)
+
+    @pyqtSlot()
+    def izlaz(self):
+        self.gasenje = True
+
+    def run(self):
+        while self.gasenje is False:
+            time.sleep(2)
+            sila = random.randint(1, 10)
+            prvi = False
+            drugi = False
+            if (self.parent().players[0].x() >= self.deluje_od and self.parent().players[0].x() <= self.deluje_do):
+                prvi = True
+            if(self.parent().players[0].dva_igraca is True):
+                if (self.parent().players[1].x() >= self.deluje_od and self.parent().players[1].x() <= self.deluje_do):
+                    drugi = True
+            x = -1
+            if prvi is True and drugi is True:
+                x = random.randint(0, 1)
+            elif prvi is True:
+                x = 0
+            elif drugi is True:
+                x = 1
+            if x != -1:
+                self.parent().prikaz_sile_signal.emit()
+                time.sleep(0.3)
+                if sila >= 8:
+                    self.parent().sila_signal.emit([0, x])
+                else:
+                    self.parent().sila_signal.emit([1, x])
+
+
 
 class sleep_thread(QThread):
     def __init__(self, parent=None):
