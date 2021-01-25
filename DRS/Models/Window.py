@@ -34,6 +34,8 @@ class Window(QMainWindow):
 
     pokreni_vanzemaljce_signal = pyqtSignal()
 
+    nova_runda_signal = pyqtSignal()
+
     def __init__(self):
         super().__init__()
 
@@ -62,23 +64,42 @@ class Window(QMainWindow):
         self.pogodio_playera = False
         self.ucitan_ui = False
         self.is_game_over = False
+        self.score_igraca = []
+        self.plasirani_igraci = []
+        self.turnir = False
+        self.cetiri_igraca = False
+        self.runda = -1
 
         self.pocetni_prozor()
 
     def pocetni_prozor(self):
         self.dugme_jedan_igrac = QPushButton('Jedan igrac', self)
         self.dugme_jedan_igrac.setStyleSheet('''QPushButton {color: white; border: 1px solid; border-color: white}QPushButton:hover {background-color: #328930;}''')
-        self.dugme_jedan_igrac.setGeometry(280 * self.razmera_sirina, 300 * self.razmera_visina, 150 * self.razmera_sirina, 50 * self.razmera_visina)
+        self.dugme_jedan_igrac.setGeometry(280 * self.razmera_sirina, 200 * self.razmera_visina, 150 * self.razmera_sirina, 50 * self.razmera_visina)
         self.dugme_jedan_igrac.setFont(QFont('Ariel', 12))
         self.dugme_jedan_igrac.clicked.connect(self.jedan_igrac)
         self.dugme_jedan_igrac.setHidden(False)
 
         self.dugme_dva_igraca = QPushButton('Dva igraca', self)
         self.dugme_dva_igraca.setStyleSheet('''QPushButton {color: white; border: 1px solid; border-color: white}QPushButton:hover {background-color: #328930;}''')
-        self.dugme_dva_igraca.setGeometry(280 * self.razmera_sirina, 400 * self.razmera_visina, 150 * self.razmera_sirina, 50 * self.razmera_visina)
+        self.dugme_dva_igraca.setGeometry(280 * self.razmera_sirina, 300 * self.razmera_visina, 150 * self.razmera_sirina, 50 * self.razmera_visina)
         self.dugme_dva_igraca.setFont(QFont('Ariel', 12))
         self.dugme_dva_igraca.clicked.connect(self.dva_igraca)
         self.dugme_dva_igraca.setHidden(False)
+
+        self.dugme_turnir_4 = QPushButton('Turnir (4)', self)
+        self.dugme_turnir_4.setStyleSheet('''QPushButton {color: white; border: 1px solid; border-color: white}QPushButton:hover {background-color: #328930;}''')
+        self.dugme_turnir_4.setGeometry(180 * self.razmera_sirina, 400 * self.razmera_visina, 150 * self.razmera_sirina, 50 * self.razmera_visina)
+        self.dugme_turnir_4.setFont(QFont('Ariel', 12))
+        self.dugme_turnir_4.clicked.connect(self.turnir_4)
+        self.dugme_turnir_4.setHidden(False)
+
+        self.dugme_turnir_8 = QPushButton('Turnir (8)', self)
+        self.dugme_turnir_8.setStyleSheet('''QPushButton {color: white; border: 1px solid; border-color: white}QPushButton:hover {background-color: #328930;}''')
+        self.dugme_turnir_8.setGeometry(380 * self.razmera_sirina, 400 * self.razmera_visina, 150 * self.razmera_sirina, 50 * self.razmera_visina)
+        self.dugme_turnir_8.setFont(QFont('Ariel', 12))
+        self.dugme_turnir_8.clicked.connect(self.turnir_8)
+        self.dugme_turnir_8.setHidden(False)
 
         self.dugme_izadji = QPushButton('Izadji', self)
         self.dugme_izadji.setStyleSheet('''QPushButton {color: white; border: 1px solid; border-color: white}QPushButton:hover {background-color: #328930;}''')
@@ -92,11 +113,25 @@ class Window(QMainWindow):
         self.setFixedSize(700 * self.razmera_sirina, 800 * self.razmera_visina)
         self.show()
 
+    def turnir_4(self):
+        self.turnir = True
+        self.cetiri_igraca = True
+        self.runda = 1
+        self.dva_igraca()
+
+    def turnir_8(self):
+        self.turnir = True
+        self.cetiri_igraca = False
+        self.runda = 1
+        self.dva_igraca()
+
     def jedan_igrac(self):
         self.nova_igra_signal.emit([0, 0])
 
         self.dugme_jedan_igrac.setHidden(True)
         self.dugme_dva_igraca.setHidden(True)
+        self.dugme_turnir_4.setHidden(True)
+        self.dugme_turnir_8.setHidden(True)
         self.dugme_izadji.setHidden(True)
 
         if self.ucitan_ui is False:
@@ -106,13 +141,15 @@ class Window(QMainWindow):
             self.players[1].dva_igraca = False
             self.set_ui()
             self.labela_skor2.setHidden(True)
+            self.labela_igrac2.setHidden(True)
             self.ucitan_ui = True
         else:
             self.labela_game_over.setHidden(True)
             self.labela_klikni_p.setHidden(True)
             self.labela_skor.setHidden(False)
             self.labela_skor2.setHidden(True)
-            self.labela_izbor_igranja.setHidden(False)
+            self.labela_igrac1.setHidden(False)
+            self.labela_igrac2.setHidden(True)
             self.players[0].setHidden(False)
             self.players[1].setHidden(True)
             self.players[0].dva_igraca = False
@@ -128,7 +165,10 @@ class Window(QMainWindow):
 
         self.dugme_jedan_igrac.setHidden(True)
         self.dugme_dva_igraca.setHidden(True)
+        self.dugme_turnir_4.setHidden(True)
+        self.dugme_turnir_8.setHidden(True)
         self.dugme_izadji.setHidden(True)
+
         if self.ucitan_ui is False:
             self.players.append(Player(self))
             self.players.append(Player(self))
@@ -142,7 +182,9 @@ class Window(QMainWindow):
             self.labela_klikni_p.setHidden(True)
             self.labela_skor.setHidden(False)
             self.labela_skor2.setHidden(False)
-            self.labela_izbor_igranja.setHidden(False)
+            self.labela_igrac1.setHidden(False)
+            self.labela_igrac2.setHidden(False)
+
             self.players[0].setHidden(False)
             self.players[1].setHidden(False)
             self.players[0].dva_igraca = True
@@ -153,20 +195,99 @@ class Window(QMainWindow):
             self.kretanje_vanzemaljca = kretanje_vanzemaljaca_thread(self)
             self.kretanje_vanzemaljca.start()
 
+        self.labela_game_over.setText("GAME OVER")
+        self.labela_game_over.setGeometry(300 * self.razmera_sirina, 30 * self.razmera_visina, 200 * self.razmera_sirina, 20 * self.razmera_visina)
+
+        if self.turnir:
+            if self.cetiri_igraca:
+                if self.runda == 3:
+                    if self.score_igraca[0] > self.score_igraca[1]:
+                        self.labela_igrac1.setText("Player 1")
+                    else:
+                        self.labela_igrac1.setText("Player 2")
+
+                    if self.score_igraca[2] > self.score_igraca[3]:
+                        self.labela_igrac2.setText("Player 3")
+                    else:
+                        self.labela_igrac2.setText("Player 4")
+                else:
+                    self.labela_igrac1.setText("Player " + str(self.runda * 2 - 1))
+                    self.labela_igrac2.setText("Player " + str(self.runda * 2))
+            else:
+                if self.runda == 5:
+                    if self.score_igraca[0] > self.score_igraca[1]:
+                        self.labela_igrac1.setText("Player 1")
+                        self.plasirani_igraci.append(1)
+                    else:
+                        self.labela_igrac1.setText("Player 2")
+                        self.plasirani_igraci.append(2)
+
+                    if self.score_igraca[2] > self.score_igraca[3]:
+                        self.labela_igrac2.setText("Player 3")
+                        self.plasirani_igraci.append(3)
+                    else:
+                        self.labela_igrac2.setText("Player 4")
+                        self.plasirani_igraci.append(4)
+                elif self.runda == 6:
+                    if self.score_igraca[4] > self.score_igraca[5]:
+                        self.labela_igrac1.setText("Player 5")
+                        self.plasirani_igraci.append(5)
+                    else:
+                        self.labela_igrac1.setText("Player 6")
+                        self.plasirani_igraci.append(6)
+
+                    if self.score_igraca[6] > self.score_igraca[7]:
+                        self.labela_igrac2.setText("Player 7")
+                        self.plasirani_igraci.append(7)
+                    else:
+                        self.labela_igrac2.setText("Player 8")
+                        self.plasirani_igraci.append(8)
+                elif self.runda == 7:
+                    if self.score_igraca[8] > self.score_igraca[9]:
+                        self.labela_igrac1.setText("Player " + str(self.plasirani_igraci[0]))
+                    else:
+                        self.labela_igrac1.setText("Player " + str(self.plasirani_igraci[1]))
+
+                    if self.score_igraca[10] > self.score_igraca[11]:
+                        self.labela_igrac2.setText("Player " + str(self.plasirani_igraci[2]))
+                    else:
+                        self.labela_igrac2.setText("Player " + str(self.plasirani_igraci[3]))
+                else:
+                    self.labela_igrac1.setText("Player " + str(self.runda * 2 - 1))
+                    self.labela_igrac2.setText("Player " + str(self.runda * 2))
+        else:
+            self.labela_igrac1.setText("Player 1")
+            self.labela_igrac2.setText("Player 2")
+            self.labela_game_over.setText("GAME OVER")
+            self.labela_game_over.setGeometry(300 * self.razmera_sirina, 30 * self.razmera_visina, 200 * self.razmera_sirina, 20 * self.razmera_visina)
+
     def set_ui(self):
+        self.labela_igrac1 = QLabel(self)
+        self.labela_igrac1.setFont(QFont('Arial', 13 * self.razmera_sirina))
+        self.labela_igrac1.setText("Player 1")
+        self.labela_igrac1.setStyleSheet("color: white; font-weight: bold")
+        self.labela_igrac1.setGeometry(20 * self.razmera_sirina, 30 * self.razmera_visina, 200 * self.razmera_sirina, 20 * self.razmera_visina)
+        self.labela_igrac1.setHidden(False)
+
+        self.labela_igrac2 = QLabel(self)
+        self.labela_igrac2.setFont(QFont('Arial', 13 * self.razmera_sirina))
+        self.labela_igrac2.setText("Player 2")
+        self.labela_igrac2.setStyleSheet("color: white; font-weight: bold")
+        self.labela_igrac2.setGeometry(580 * self.razmera_sirina, 30 * self.razmera_visina, 200 * self.razmera_sirina, 20 * self.razmera_visina)
+        self.labela_igrac2.setHidden(False)
+
         self.labela_skor = QLabel(self)
         self.labela_skor.setFont(QFont('Arial', 13 * self.razmera_sirina))
         self.labela_skor.setText("SCORE: " + self.skor.__str__())
         self.labela_skor.setStyleSheet("color: white; font-weight: bold")
-        self.labela_skor.setGeometry(20 * self.razmera_sirina, 30 * self.razmera_visina, 200 * self.razmera_sirina, 20 * self.razmera_visina)
+        self.labela_skor.setGeometry(20 * self.razmera_sirina, 60 * self.razmera_visina, 200 * self.razmera_sirina, 20 * self.razmera_visina)
         self.labela_skor.setHidden(False)
 
         self.labela_skor2 = QLabel(self)
         self.labela_skor2.setFont(QFont('Arial', 13 * self.razmera_sirina))
         self.labela_skor2.setText("SCORE: " + self.skor.__str__())
         self.labela_skor2.setStyleSheet("color: white; font-weight: bold")
-        self.labela_skor2.setGeometry(580 * self.razmera_sirina, 30 * self.razmera_visina, 200 * self.razmera_sirina,
-                                      20 * self.razmera_visina)
+        self.labela_skor2.setGeometry(580 * self.razmera_sirina, 60 * self.razmera_visina, 200 * self.razmera_sirina, 20 * self.razmera_visina)
         self.labela_skor2.setHidden(False)
 
 
@@ -205,6 +326,8 @@ class Window(QMainWindow):
 
         self.pokreni_vanzemaljce_signal.connect(self.pokreni_vanzemaljce)
 
+        self.nova_runda_signal.connect(self.nova_runda)
+
         if self.players[0].dva_igraca:
             self.layout().addWidget(self.players[0])
             self.players[0].move(100 * self.razmera_sirina, 700 * self.razmera_visina)
@@ -228,6 +351,9 @@ class Window(QMainWindow):
 
         self.kretanje_vanzemaljca = kretanje_vanzemaljaca_thread(self)
         self.kretanje_vanzemaljca.start()
+
+    def nova_runda(self):
+        self.dva_igraca()
 
     def closeEvent(self, event):
         self.players[0].game_over_signal.emit()
@@ -278,12 +404,16 @@ class Window(QMainWindow):
         self.labela_klikni_p.setHidden(True)
         self.labela_skor.setHidden(True)
         self.labela_skor2.setHidden(True)
+        self.labela_igrac1.setHidden(True)
+        self.labela_igrac2.setHidden(True)
 
         self.players[0].setHidden(True)
         self.players[1].setHidden(True)
 
         self.dugme_jedan_igrac.setHidden(False)
         self.dugme_dva_igraca.setHidden(False)
+        self.dugme_turnir_4.setHidden(False)
+        self.dugme_turnir_8.setHidden(False)
         self.dugme_izadji.setHidden(False)
 
     @pyqtSlot()
@@ -316,6 +446,29 @@ class Window(QMainWindow):
 
 
         if(novi_nivo == 0):
+            if self.turnir:
+                self.runda += 1
+                self.score_igraca.append(self.skor)
+                self.score_igraca.append(self.skor2)
+                if self.cetiri_igraca:
+                    if self.runda == 4:
+                        self.turnir = False
+                        self.runda = -1
+                        self.cetiri_igraca = False
+                        self.score_igraca = []
+                elif self.runda == 8:
+                    self.turnir = False
+                    self.runda = -1
+                    self.cetiri_igraca = False
+                    self.score_igraca = []
+                    self.plasirani_igraci = []
+
+                if self.skor > self.skor2:
+                    self.labela_game_over.setText("Pobednik je " + self.labela_igrac1.text())
+                else:
+                    self.labela_game_over.setText("Pobednik je " + self.labela_igrac2.text())
+                self.labela_game_over.setGeometry(250 * self.razmera_sirina, 30 * self.razmera_visina, 250 * self.razmera_sirina, 20 * self.razmera_visina)
+
             self.players[0].game_over_signal.emit(0)
             self.labela_game_over.setHidden(False)
             self.labela_klikni_p.setHidden(True)
@@ -585,7 +738,7 @@ class Window(QMainWindow):
                         if len(self.lista_zivota) == 0:
                             self.game_over_signal.emit(0)
                     else:
-                        if len(self.lista_zivota) + len(self.lista_zivota2) == 0:
+                        if len(self.lista_zivota) + len(self.lista_zivota2) > 0:
                             self.game_over_signal.emit(0)
 
         if (self.postoji_projectil_vanzemaljaca):
@@ -652,33 +805,33 @@ class Window(QMainWindow):
     def kreiranje_zivota(self):
         zivot = Zivot(self)
         self.layout().addWidget(zivot)
-        zivot.move(20 * self.razmera_sirina, 60 * self.razmera_visina)
+        zivot.move(20 * self.razmera_sirina, 90 * self.razmera_visina)
         self.lista_zivota.append(zivot)
 
         zivot = Zivot(self)
         self.layout().addWidget(zivot)
-        zivot.move(60 * self.razmera_sirina, 60 * self.razmera_visina)
+        zivot.move(60 * self.razmera_sirina, 90 * self.razmera_visina)
         self.lista_zivota.append(zivot)
 
         zivot = Zivot(self)
         self.layout().addWidget(zivot)
-        zivot.move(100 * self.razmera_sirina, 60 * self.razmera_visina)
+        zivot.move(100 * self.razmera_sirina, 90 * self.razmera_visina)
         self.lista_zivota.append(zivot)
 
     def kreiranje_zivota2(self):
         zivot = Zivot(self)
         self.layout().addWidget(zivot)
-        zivot.move(580 * self.razmera_sirina, 60 * self.razmera_visina)
+        zivot.move(580 * self.razmera_sirina, 90 * self.razmera_visina)
         self.lista_zivota2.append(zivot)
 
         zivot = Zivot(self)
         self.layout().addWidget(zivot)
-        zivot.move(620 * self.razmera_sirina, 60 * self.razmera_visina)
+        zivot.move(620 * self.razmera_sirina, 90 * self.razmera_visina)
         self.lista_zivota2.append(zivot)
 
         zivot = Zivot(self)
         self.layout().addWidget(zivot)
-        zivot.move(660 * self.razmera_sirina, 60 * self.razmera_visina)
+        zivot.move(660 * self.razmera_sirina, 90 * self.razmera_visina)
         self.lista_zivota2.append(zivot)
 
 class sleep_thread(QThread):
@@ -687,7 +840,9 @@ class sleep_thread(QThread):
 
     def run(self):
         time.sleep(2)
-        if self.parent().is_game_over:
+        if self.parent().turnir and self.parent().is_game_over:
+            self.parent().nova_runda_signal.emit()
+        elif self.parent().is_game_over:
             self.parent().povratak_na_pocetak_signal.emit()
         else:
             self.parent().sleep_signal.emit()

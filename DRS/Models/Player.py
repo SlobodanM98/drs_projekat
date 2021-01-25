@@ -67,7 +67,7 @@ class Player(QLabel):
                 if event.key() == Qt.Key_Left:
                     nit2 = Thread(target=self.pritisnutoA, args=[1])
                     nit2.start()
-                if (event.key() == Qt.Key_Enter):
+                if event.key() == Qt.Key_Enter:
                     nit = Thread(target=self.pritisnut_space, args=[1])
                     nit.start()
 
