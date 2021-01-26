@@ -41,6 +41,7 @@ class Player(QLabel):
 
     def paljenje(self):
         self.game_over = False
+        self.blokiran_drugi = False
         #self.izabrano_kretanje = False
         self.a_odpusteno = False
         self.d_odpusteno = False

@@ -36,7 +36,7 @@ class Window(QMainWindow):
 
     nova_runda_signal = pyqtSignal()
     sila_signal = pyqtSignal(list)
-    prikaz_sile_signal = pyqtSignal()
+    prikaz_sile_signal = pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
@@ -313,13 +313,13 @@ class Window(QMainWindow):
         self.labela_klikni_p.setGeometry(260 * self.razmera_sirina, 100 * self.razmera_visina, 220 * self.razmera_sirina, 30 * self.razmera_visina)
         self.labela_klikni_p.setHidden(True)
 
-        self.lbl = QLabel(self)
+        self.labela_grom = QLabel(self)
         slika = QPixmap("grom.png")
-        self.lbl.setPixmap(slika.scaled(15 * self.razmera_sirina, 20 * self.razmera_visina))
-        self.lbl.resize(15 * self.razmera_sirina, 20 * self.razmera_visina)
-        self.layout().addWidget(self.lbl)
-        self.lbl.move(320 * self.razmera_sirina, 670 * self.razmera_visina)
-        self.lbl.setHidden(True)
+        self.labela_grom.setPixmap(slika.scaled(15 * self.razmera_sirina, 20 * self.razmera_visina))
+        self.labela_grom.resize(15 * self.razmera_sirina, 20 * self.razmera_visina)
+        self.layout().addWidget(self.labela_grom)
+        self.labela_grom.move(320 * self.razmera_sirina, 670 * self.razmera_visina)
+        self.labela_grom.setHidden(True)
 
 
         self.pomeri_dole_signal.connect(self.pomeranje_dole)
@@ -374,8 +374,12 @@ class Window(QMainWindow):
         self.delovanje_sile = sila_thread(self)
         self.delovanje_sile.start()
 
-    def prikaz_sile(self):
-        self.lbl.setHidden(False)
+    @pyqtSlot(int)
+    def prikaz_sile(self, prikazi):
+        if prikazi == 0:
+            self.labela_grom.setHidden(True)
+        elif prikazi == 1:
+            self.labela_grom.setHidden(False)
 
     def nova_runda(self):
         self.dva_igraca()
@@ -425,16 +429,18 @@ class Window(QMainWindow):
                 for i in self.lista_zivota2:
                     if i.postoji is True:
                         brSrca += 1
+
                 if brSrca == 1:
                     self.lista_zivota2[1].postoji = True
                     self.lista_zivota2[1].setHidden(False)
                 elif brSrca == 2:
+
+
                     self.lista_zivota2[0].postoji = True
                     self.lista_zivota2[0].setHidden(False)
         elif params[0] == 1:
-            if self.postoji_projectil_vanzemaljaca:
+            if self.postoji_projectil_vanzemaljaca and self.projectile_vanzemaljaca.y() < 700:
                 self.players[params[1]].move(self.projectile_vanzemaljaca.x() - 15 * self.razmera_sirina, self.players[params[1]].y())
-        self.lbl.setHidden(True)
 
     def povratak_na_pocetni_prozor(self):
         self.is_game_over = False
@@ -459,6 +465,7 @@ class Window(QMainWindow):
         self.aliensZaPucanje.clear()
         self.aliens.clear()
 
+        self.labela_grom.setHidden(True)
         self.labela_game_over.setHidden(True)
         self.labela_klikni_p.setHidden(True)
         self.labela_skor.setHidden(True)
@@ -932,7 +939,9 @@ class sila_thread(QThread):
 
     def run(self):
         while self.gasenje is False:
-            time.sleep(2)
+            time.sleep(1.8)
+            self.parent().prikaz_sile_signal.emit(1)
+            time.sleep(0.2)
             sila = random.randint(1, 10)
             prvi = False
             drugi = False
@@ -949,12 +958,12 @@ class sila_thread(QThread):
             elif drugi is True:
                 x = 1
             if x != -1:
-                self.parent().prikaz_sile_signal.emit()
-                time.sleep(0.3)
+                #time.sleep(0.3)
                 if sila >= 8:
                     self.parent().sila_signal.emit([0, x])
                 else:
                     self.parent().sila_signal.emit([1, x])
+            self.parent().prikaz_sile_signal.emit(0)
 
 
 
