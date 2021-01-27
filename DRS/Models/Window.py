@@ -1,16 +1,17 @@
-import datetime
-import time
-
+import random
 from PyQt5.QtGui import QFont, QPixmap
-from PyQt5.QtWidgets import QMainWindow, QTextEdit, QAction, QFileDialog, QApplication, QDesktopWidget, QLabel, QWidget, \
-    QHBoxLayout, QVBoxLayout, QPushButton
-from PyQt5.QtCore import Qt, pyqtSlot, QThread, pyqtSignal
+from PyQt5.QtWidgets import QMainWindow, QDesktopWidget, QLabel, QPushButton
+from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal
 from Models.Player import Player
 from Models.Projectile import Projectile
 from Models.Alien import Alien
 from Models.Health import Zivot
 from Models.Stit import Stit
-import random
+from Threads.Sila_thread import sila_thread
+from Threads.Sleep_thread import sleep_thread
+from Threads.Kretanje_vanzemaljaca_thread import kretanje_vanzemaljaca_thread
+from Threads.Kretanje_projektila_thread import kretanje_projektila_thread
+from Threads.Kretanje_projektila_vanzemaljaca_thread import kretanje_projektila_vanzemaljaca_thread
 
 
 class Window(QMainWindow):
@@ -73,6 +74,7 @@ class Window(QMainWindow):
         self.turnir = False
         self.cetiri_igraca = False
         self.runda = -1
+        self.nivo = 0
 
         self.pocetni_prozor()
 
@@ -518,6 +520,12 @@ class Window(QMainWindow):
         if(novi_nivo == 0):
             if self.turnir:
                 self.runda += 1
+                if self.skor == self.skor2:
+                    x = random.randint(0, 1)
+                    if x == 0:
+                        self.skor += 1
+                    else:
+                        self.skor2 += 1
                 self.score_igraca.append(self.skor)
                 self.score_igraca.append(self.skor2)
                 if self.cetiri_igraca:
@@ -542,7 +550,7 @@ class Window(QMainWindow):
             self.players[0].game_over_signal.emit(0)
             self.labela_game_over.setHidden(False)
             self.labela_klikni_p.setHidden(True)
-
+            self.nivo = 0
             self.is_game_over = True
             self.spavanje = sleep_thread(self)
             self.spavanje.start()
@@ -603,6 +611,7 @@ class Window(QMainWindow):
             self.labela_game_over.setText("NOVI NIVO")
             self.labela_game_over.setHidden(False)
             self.spavanje = sleep_thread(self)
+            self.nivo += 1
             self.spavanje.start()
 
         if novi_nivo[0] == 0:
@@ -635,18 +644,19 @@ class Window(QMainWindow):
 
     @pyqtSlot(int)  #index == 0 - prvi igrac, index == 1 - drugi igrac
     def kreiranje_projektila(self, index):
-        projectile = Projectile(self)
-        self.projectiles[index] = projectile
-        self.postoji_projectils[index] = True
-        self.layout().addWidget(self.projectiles[index])
-        projectile.move(self.players[index].x() + 21 * self.razmera_sirina,
-                        self.players[index].y() - 5 * self.razmera_visina)
-        if index == 0:
-            self.projektil_kretanje = kretanje_projektila_thread(self, self.projectiles[index], index)
-            self.projektil_kretanje.start()
-        elif index == 1:
-            self.projektil_kretanje2 = kretanje_projektila_thread(self, self.projectiles[index], index)
-            self.projektil_kretanje2.start()
+        if self.postoji_projectils[index] is False:
+            projectile = Projectile(self)
+            self.projectiles[index] = projectile
+            self.postoji_projectils[index] = True
+            self.layout().addWidget(self.projectiles[index])
+            projectile.move(self.players[index].x() + 21 * self.razmera_sirina,
+                            self.players[index].y() - 5 * self.razmera_visina)
+            if index == 0:
+                self.projektil_kretanje = kretanje_projektila_thread(self, self.projectiles[index], index)
+                self.projektil_kretanje.start()
+            elif index == 1:
+                self.projektil_kretanje2 = kretanje_projektila_thread(self, self.projectiles[index], index)
+                self.projektil_kretanje2.start()
 
 
     def kreiranje_stita(self):
@@ -656,15 +666,11 @@ class Window(QMainWindow):
         self.stitovi.append(stit)
         stit = Stit(self)
         self.layout().addWidget(stit)
-        stit.move(180 * self.razmera_sirina, 600 * self.razmera_visina)
+        stit.move(225 * self.razmera_sirina, 600 * self.razmera_visina)
         self.stitovi.append(stit)
         stit = Stit(self)
         self.layout().addWidget(stit)
-        stit.move(310 * self.razmera_sirina, 600 * self.razmera_visina)
-        self.stitovi.append(stit)
-        stit = Stit(self)
-        self.layout().addWidget(stit)
-        stit.move(440 * self.razmera_sirina, 600 * self.razmera_visina)
+        stit.move(395 * self.razmera_sirina, 600 * self.razmera_visina)
         self.stitovi.append(stit)
         stit = Stit(self)
         self.layout().addWidget(stit)
@@ -750,19 +756,20 @@ class Window(QMainWindow):
 
     @pyqtSlot()
     def kreiranje_projektila_vanzemaljaca(self):
-        projectile = Projectile(self, 10, 10, "pow.png")
-        self.projectile_vanzemaljaca = projectile
-        self.postoji_projectil_vanzemaljaca = True
-        alien = random.choice(self.aliensZaPucanje)
-        for i in range(self.aliensZaPucanje.index(alien), len(self.aliensZaPucanje)):
-            if(alien.red == 5):
-                break
-            if(alien.kolona == self.aliensZaPucanje[i].kolona and alien.red < self.aliensZaPucanje[i].red):
-                alien = self.aliensZaPucanje[i]
-        self.layout().addWidget(self.projectile_vanzemaljaca)
-        projectile.move(alien.x() + 10 * self.razmera_sirina, alien.y() + 25 * self.razmera_visina)
-        self.projektil_vanzemaljaca_kretanje = kretanje_projektila_vanzemaljaca_thread(self, self.projectile_vanzemaljaca)
-        self.projektil_vanzemaljaca_kretanje.start()
+        if self.postoji_projectil_vanzemaljaca is False:
+            projectile = Projectile(self, 10, 10, "pow.png")
+            self.projectile_vanzemaljaca = projectile
+            self.postoji_projectil_vanzemaljaca = True
+            alien = random.choice(self.aliensZaPucanje)
+            for i in range(self.aliensZaPucanje.index(alien), len(self.aliensZaPucanje)):
+                if(alien.red == 5):
+                    break
+                if(alien.kolona == self.aliensZaPucanje[i].kolona and alien.red < self.aliensZaPucanje[i].red):
+                    alien = self.aliensZaPucanje[i]
+            self.layout().addWidget(self.projectile_vanzemaljaca)
+            projectile.move(alien.x() + 10 * self.razmera_sirina, alien.y() + 25 * self.razmera_visina)
+            self.projektil_vanzemaljaca_kretanje = kretanje_projektila_vanzemaljaca_thread(self, self.projectile_vanzemaljaca)
+            self.projektil_vanzemaljaca_kretanje.start()
 
     @pyqtSlot(int)
     def kretanje_projektila_vanzemaljaca(self, i):
@@ -922,260 +929,3 @@ class Window(QMainWindow):
         self.layout().addWidget(zivot)
         zivot.move(660 * self.razmera_sirina, 90 * self.razmera_visina)
         self.lista_zivota2.append(zivot)
-
-class sila_thread(QThread):
-    gasenje_signal = pyqtSignal()
-
-    def __init__(self, parent = None):
-        super().__init__(parent)
-        self.deluje_od = 250 * self.parent().razmera_sirina
-        self.deluje_do = 350 * self.parent().razmera_sirina
-        self.gasenje = False
-        self.gasenje_signal.connect(self.izlaz)
-
-    @pyqtSlot()
-    def izlaz(self):
-        self.gasenje = True
-
-    def run(self):
-        while self.gasenje is False:
-            time.sleep(1.8)
-            self.parent().prikaz_sile_signal.emit(1)
-            time.sleep(0.2)
-            sila = random.randint(1, 10)
-            prvi = False
-            drugi = False
-            if (self.parent().players[0].x() >= self.deluje_od and self.parent().players[0].x() <= self.deluje_do):
-                prvi = True
-            if(self.parent().players[0].dva_igraca is True):
-                if (self.parent().players[1].x() >= self.deluje_od and self.parent().players[1].x() <= self.deluje_do):
-                    drugi = True
-            x = -1
-            if prvi is True and drugi is True:
-                x = random.randint(0, 1)
-            elif prvi is True:
-                x = 0
-            elif drugi is True:
-                x = 1
-            if x != -1:
-                #time.sleep(0.3)
-                if sila >= 8:
-                    self.parent().sila_signal.emit([0, x])
-                else:
-                    self.parent().sila_signal.emit([1, x])
-            self.parent().prikaz_sile_signal.emit(0)
-
-
-
-class sleep_thread(QThread):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-    def run(self):
-        time.sleep(2)
-        if self.parent().turnir and self.parent().is_game_over:
-            self.parent().nova_runda_signal.emit()
-        elif self.parent().is_game_over:
-            self.parent().povratak_na_pocetak_signal.emit()
-        else:
-            self.parent().sleep_signal.emit()
-
-class kretanje_vanzemaljaca_thread(QThread):
-
-    gasenje_signal = pyqtSignal()
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.gasenje = False
-        self.gasenje_signal.connect(self.izlaz)
-
-    @pyqtSlot()
-    def izlaz(self):
-        self.gasenje = True
-
-    def run(self):
-        kretanje_desno = False
-        dosao_do_ivice = False
-        nova_iteracija = False
-        izvrseno_pomeranje_dole = False
-        izvrseno_pomeranje_dole_za_vreme = False
-
-        korak = 11
-
-        spavanje_niti = 1
-        broj_zivih = len(self.parent().aliensZaPucanje)
-        vreme_za_pucanje = 0
-        granica_za_pucanje = 1
-
-        vreme_izvrsenja = 0.3
-
-        while self.gasenje is False:
-            if broj_zivih <= 55 and broj_zivih > 45:
-                spavanje_niti = 1.3 - vreme_izvrsenja
-            if broj_zivih <= 45 and broj_zivih > 34:
-                spavanje_niti = 1.1 - vreme_izvrsenja
-            elif broj_zivih <= 34 and broj_zivih > 23:
-                spavanje_niti = 0.9 - vreme_izvrsenja
-            elif broj_zivih <= 23 and broj_zivih > 12:
-                spavanje_niti = 0.8 - vreme_izvrsenja
-            elif broj_zivih <= 12 and broj_zivih > 6:
-                granica_za_pucanje = 0.6
-                spavanje_niti = 0.6 - vreme_izvrsenja
-            elif broj_zivih <= 6 and broj_zivih > 2:
-                granica_za_pucanje = 0.4
-                spavanje_niti = 0.5 - vreme_izvrsenja
-            elif broj_zivih == 2:
-                spavanje_niti = 0.4 - vreme_izvrsenja
-            elif broj_zivih == 1:
-                granica_za_pucanje = 0.5
-                spavanje_niti = 0.2 - vreme_izvrsenja
-
-            if nova_iteracija == False:
-                time.sleep(spavanje_niti)
-                vreme_za_pucanje += spavanje_niti
-            br = 0
-            pocetak = datetime.datetime.now()
-
-            indexVanzemaljca = -1
-            pronadjenIndexVanzemaljca = False
-            brojProlaza = 0
-
-            while(pronadjenIndexVanzemaljca is False and len(self.parent().aliensZaPucanje) != 0):
-                indexProvere = (len(self.parent().aliens) - 1)
-
-                if kretanje_desno is False:
-                    indexProvere -= 10
-                    indexProvere += brojProlaza
-                else:
-                    indexProvere -= brojProlaza
-
-                for i in range(5):
-                    if (self.parent().aliens[indexProvere].postoji):
-                        indexVanzemaljca = indexProvere
-                        pronadjenIndexVanzemaljca = True
-                        break
-                    else:
-                        indexProvere -= korak
-
-                brojProlaza += 1
-            if len(self.parent().aliensZaPucanje) == 0:
-                continue
-
-            if nova_iteracija and dosao_do_ivice:
-                for i in reversed(self.parent().aliens):
-                    self.parent().pomeri_dole_signal.emit(self.parent().aliens.index(i))
-                    br += 1
-                    if br % 11 == 0:
-                        time.sleep(0.05 * spavanje_niti)
-            elif kretanje_desno:
-                if self.parent().aliens[indexVanzemaljca].x() + 50 * self.parent().razmera_sirina <= 650 * self.parent().razmera_sirina:
-                    for i in reversed(self.parent().aliens):
-                        self.parent().pomeri_desno_signal.emit(self.parent().aliens.index(i))
-                        br += 1
-                        if br % 11 == 0:
-                            time.sleep(0.05 * spavanje_niti)
-                else:
-                    kretanje_desno = False
-                    dosao_do_ivice = True
-            else:
-                if self.parent().aliens[indexVanzemaljca].x() - 50 * self.parent().razmera_sirina >= 0:
-                    for i in reversed(self.parent().aliens):
-                        self.parent().pomeri_levo_signal.emit(self.parent().aliens.index(i))
-                        br += 1
-                        if br % 11 == 0:
-                            time.sleep(0.05 * spavanje_niti)
-                else:
-                    kretanje_desno = True
-                    dosao_do_ivice = True
-
-            if dosao_do_ivice and nova_iteracija:
-                izvrseno_pomeranje_dole = True
-                izvrseno_pomeranje_dole_za_vreme = True
-
-            if dosao_do_ivice and izvrseno_pomeranje_dole is False:
-                nova_iteracija = True
-            else:
-                nova_iteracija = False
-                dosao_do_ivice = False
-                izvrseno_pomeranje_dole = False
-
-            dosao_do_dna = False
-
-            if dosao_do_ivice:
-                for i in reversed(self.parent().aliens):
-                    if i.postoji:
-                        if len(self.parent().stitovi) != 0:
-                            if i.y() > 560 * self.parent().razmera_visina:
-                                dosao_do_dna = True
-                                self.parent().game_over_signal.emit(0)
-                                break
-                        else:
-                            if i.y() > 640 * self.parent().razmera_visina:
-                                dosao_do_dna = True
-                                self.parent().game_over_signal.emit(0)
-                                break
-
-            if dosao_do_dna:
-                break
-
-            if vreme_za_pucanje >= granica_za_pucanje and self.gasenje is False:
-                if self.parent().postoji_projectil_vanzemaljaca is False:
-                    self.parent().projektil_vanzemaljaca_kreiranje_signal.emit()
-                    vreme_za_pucanje = 0
-
-            broj_zivih = len(self.parent().aliensZaPucanje)
-
-            if izvrseno_pomeranje_dole_za_vreme is False:
-                kraj = datetime.datetime.now()
-                vreme_izvrsenja = (pocetak - kraj).total_seconds() * -1
-            else:
-                izvrseno_pomeranje_dole_za_vreme = False
-
-
-class kretanje_projektila_thread(QThread):
-
-    gasenje_signal = pyqtSignal()
-
-    def __init__(self, parent=None, projectile=None, index=None):
-        super().__init__(parent)
-        self.projectile = projectile
-        self.index = index
-        self.gasenje = False
-        self.gasenje_signal.connect(self.izlaz)
-
-    @pyqtSlot()
-    def izlaz(self):
-        self.gasenje = True
-
-    def run(self):
-        while self.projectile.y() > 0 and self.gasenje is False:
-            time.sleep(0.03)
-            if self.projectile.y() < 100 * self.parent().razmera_visina and self.projectile.y() > 0:
-                self.parent().projektil_kretanje_signal.emit([0, self.index])
-                break
-            else:
-                self.parent().projektil_kretanje_signal.emit([1, self.index])
-
-
-class kretanje_projektila_vanzemaljaca_thread(QThread):
-
-    gasenje_signal = pyqtSignal()
-
-    def __init__(self, parent=None, projectile=None):
-        super().__init__(parent)
-        self.projectile = projectile
-        self.gasenje = False
-        self.gasenje_signal.connect(self.izlaz)
-
-    @pyqtSlot()
-    def izlaz(self):
-        self.gasenje = True
-
-    def run(self):
-        while self.projectile.y() > 0 and self.gasenje is False:
-            time.sleep(0.05)
-            if self.projectile.y() > 750 * self.parent().razmera_visina and self.projectile.y() < 800 * self.parent().razmera_visina:
-                self.parent().projektil_vanzemaljaca_kretanje_signal.emit(0)
-                break
-            else:
-                self.parent().projektil_vanzemaljaca_kretanje_signal.emit(1)
